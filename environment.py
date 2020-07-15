@@ -11,12 +11,13 @@ from shapely.geometry import Point
 
 class Environment(object):
 
-    def __init__(self, lasers, obstacles):
+    def __init__(self, lasers, obstacles, max_laser_length):
         self.obstacles = obstacles # List of obstacles objects, unordered
         self.obstacle_distances = [None]*len(obstacles) # List of obstacle distances in same order as obstacles
         self.ordered_obstacles = [None]*len(obstacles) # Ordered indexes of self.obstacles based on distance to Drone
         self.laser_angles = [None]*lasers
         self.laser_distances = [None]*lasers
+        self.max_laser_length = max_laser_length
         self.collision = False
 
     def update(self, drone):
@@ -46,9 +47,11 @@ class Environment(object):
             if self.laser_angles[i] > 0 and self.laser_angles[i] < np.pi:
                 # If laser is facing ground
                 distance = np.sqrt(((-laser_b/laser_m)-pos_drone[0][0])**2 + (pos_drone[1][0])**2) # Find intersection with ground [m]
+                if distance > self.max_laser_length:
+                    distance = self.max_laser_length
             else:
                 # If laser doesn't face grond then laser goes to infinity
-                distance = 1000000 # TODO: Find out if this is wrong
+                distance = self.max_laser_length # TODO: Find out if this is wrong
 
             laser_vector = np.array([np.cos(self.laser_angles[i]), -np.sin(self.laser_angles[i])]) # Calculate once here to avoid Calculating multiple times
 
@@ -93,6 +96,9 @@ class Environment(object):
 
     def findCollision(self, drone):
         # Find if there are any collisions, return True or False
+        if drone.pos[1][0] < 0:
+            return True
+
         obstacles_to_observe = [] # list with index of obstacles within maximum range for collision
         for j in self.ordered_obstacles:
             max_distance = 2*np.sqrt(drone.length**2 + drone.height**2) + self.obstacles[j].radius

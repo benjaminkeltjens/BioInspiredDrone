@@ -22,6 +22,7 @@ class Renderer(object):
         self.obstacle_lines = self.createObstacles(obstacles)
         self.laser_lines = self.initialiseLasers(drone)
         self.drone_line = self.initialiseDrone(drone)
+        self.ground_line, = self.ax.plot([xlims[0], xlims[1]], [0, 0], 'g-')
 
     def updateGraph(self, drone):
         # Update Drone

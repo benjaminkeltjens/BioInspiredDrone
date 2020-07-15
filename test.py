@@ -23,9 +23,10 @@ lasers = 8
 laser_range = 2*np.pi # [rad]
 input_limit = 50 # [N]
 dt = 0.01 #[s]
+max_laser_length = 10
 
 # Starting position
-x_initial = 0. # [m]
+x_initial = -1. # [m]
 z_initial = 10. # [m]
 
 
@@ -42,7 +43,7 @@ for i in range(total_obstacles):
     obstacles.append(Obstacle(x,z,r))
 obstacles.append(Obstacle(0,13,0.5))
 
-environment = Environment(lasers, obstacles)
+environment = Environment(lasers, obstacles, max_laser_length)
 # Initialise None lists in environment and drone
 environment.update(drone)
 drone.recieveLaserDistances(environment.laser_distances)
@@ -50,7 +51,7 @@ drone.recieveLaserDistances(environment.laser_distances)
 # Initialise Renderer
 #Render Window limits
 xlims = [-10,10]
-ylims = [0,40]
+ylims = [0,20]
 renderer = Renderer(obstacles, drone, xlims, ylims)
 
 
@@ -58,7 +59,7 @@ renderer = Renderer(obstacles, drone, xlims, ylims)
 collision = False
 
 while not collision:
-    input_L = mass*-gravity/2
+    input_L = 0#mass*-gravity/2
     input_R = input_L
     drone.update(input_L, input_R)
     environment.update(drone)
