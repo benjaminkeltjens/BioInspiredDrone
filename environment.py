@@ -7,49 +7,71 @@ July 2020
 
 import numpy as np
 from drone import Drone
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Point
 
 class Environment(object):
 
-    def __init__(self, lasers):
-        self.obstacles = [] # List of obstacles objects, unordered
-        self.obstacle_distances = [] # List of obstacle distances in same order as obstacles
-        self.ordered_obstacles = [] # Ordered indexes of self.obstacles based on distance to Drone
+    def __init__(self, lasers, obstacles):
+        self.obstacles = obstacles # List of obstacles objects, unordered
+        self.obstacle_distances = [None]*len(obstacles) # List of obstacle distances in same order as obstacles
+        self.ordered_obstacles = [None]*len(obstacles) # Ordered indexes of self.obstacles based on distance to Drone
         self.laser_angles = [None]*lasers
         self.laser_distances = [None]*lasers
+        self.collision = False
 
     def update(self, drone):
-        self.laser_angles = drone.laser_list()
+        self.laser_angles = drone.laser_list
+        self.orderObstacles(drone.pos)
         self.findLaserDistances(drone.pos)
+        self.collision = self.findCollision(drone)
 
     def orderObstacles(self, pos_drone):
         # Update and order the distancece of the obstacles
 
         # First update obstacle_distances
-        for i in range(len(obstacles)):
-            obstacle_distances[i] = obstacles[i].findDistance(pos_drone)
-
-        self.ordered_obstacles = list(np.argsort(obstacle_distances)[::-1]) # Find the sorted of the distances, and reverse
+        for i in range(len(self.obstacles)):
+            self.obstacle_distances[i] = self.obstacles[i].findDistance(pos_drone)
+        self.ordered_obstacles = list(np.argsort(self.obstacle_distances)) # Find the sorted of the distances, and reverse
 
     def findLaserDistances(self, pos_drone):
 
-        for i in range(len(laser_angles)):
+        for i in range(len(self.laser_angles)):
             # For each laser
-            laser_m = -np.tan(laser_angles[i])
+            laser_m = -np.tan(self.laser_angles[i])
+            if abs(laser_m) > 10000: # limit laser slope to not have floating point errors in calculations
+                laser_m = 10000 # Sign doesn't matter for slope intersection
             laser_b = pos_drone[1][0] - laser_m * pos_drone[0][0]
-            distance = np.sqrt(((-b/m)-pos_drone[0][0])**2 + (pos_drone[1][0])**2) # Find intersection with ground
 
-            for j in ordered_obstacles:
+            # Initialise distance to maximum
+            if self.laser_angles[i] > 0 and self.laser_angles[i] < np.pi:
+                # If laser is facing ground
+                distance = np.sqrt(((-laser_b/laser_m)-pos_drone[0][0])**2 + (pos_drone[1][0])**2) # Find intersection with ground [m]
+            else:
+                # If laser doesn't face grond then laser goes to infinity
+                distance = 1000000 # TODO: Find out if this is wrong
+
+            laser_vector = np.array([np.cos(self.laser_angles[i]), -np.sin(self.laser_angles[i])]) # Calculate once here to avoid Calculating multiple times
+
+            for j in self.ordered_obstacles:
                 # For each obstacle find if laser collides with the determinant and then find intersections
                 obstacle = self.obstacles[j]
-                a = 1 - laser_m**2
-                b = -(2*obstacle.pos[0][0] + 2*laser_m*(laser_b-obstacle.pos[1][0]))
-                c = obstacle.pos[0][0]**2 - (laser_b-obstacle.pos[1][0]))**2 - obstacle.radius**2
+                a = 1 + laser_m**2
+                b = (-2*obstacle.pos[0][0] + 2*laser_m*(laser_b-obstacle.pos[1][0]))
+                c = obstacle.pos[0][0]**2 + (laser_b-obstacle.pos[1][0])**2 - obstacle.radius**2
 
                 determinant = b**2 - 4*a*c
                 if determinant < 0:
                     # There is no intersection, so continue search
                     continue
+
+                # Check that the obstacle is in the correct direction with dot product between relative position of the
+                # drone and obstacle and the laser vector more than 0
+                relative_position = obstacle.pos-pos_drone
+                if laser_vector.dot(relative_position.flatten()) < 0:
+                    continue
+
+
+
                 elif determinant == 0:
                     # There is one intersection, however, this extremely unlikely
                     x_intersect = -b / (2*a)
@@ -69,25 +91,25 @@ class Environment(object):
 
             self.laser_distances[i] = distance
 
-        def findCollision(self, drone):
-            # Find if there are any collisions, return True or False
+    def findCollision(self, drone):
+        # Find if there are any collisions, return True or False
+        obstacles_to_observe = [] # list with index of obstacles within maximum range for collision
+        for j in self.ordered_obstacles:
+            max_distance = 2*np.sqrt(drone.length**2 + drone.height**2) + self.obstacles[j].radius
+            if self.obstacle_distances[j] <= max_distance:
+                obstacles_to_observe.append(j)
 
-            obstacles_to_observe = [] # list with index of obstacles within maximum range for collision
-            for j in self.ordered_obstacles:
-                max_distance = 2*np.sqrt(drone.length**2 + drone.height**2) + obstacles[j].radius
-                if obstacle_distances[j] <= max_distance:
-                    obstacles_to_observe.append(j)
-
-            if len(obstacles_to_observe) == 0:
-                return False
-
-            for j in obstacles_to_observe:
-                #TODO: Find faster way find intersections
-                if self.obstacles[j].shape.intersection(drone.shape) > 0:
-                    # If there is an intersection between the two objects then there is a collision
-                    return True
-
+        if len(obstacles_to_observe) == 0:
+            # If there are no objects in the maximum range then return no collisions
             return False
+
+        for j in obstacles_to_observe:
+            #TODO: Find faster way to find intersections
+            if self.obstacles[j].shape.intersection(drone.shape).area > 0:
+                # If there is an intersection between the two objects then there is a collision
+                return True
+
+        return False
 
 
 class Obstacle(object):
@@ -95,7 +117,8 @@ class Obstacle(object):
     def __init__(self,xposition,zposition,radius):
         self.pos = np.array([[xposition],[zposition]])
         self.radius = radius
-        self.shape = Point(xpoistion,zposition).buffer(radius)
+        self.shape = Point(xposition,zposition).buffer(radius)
+        self.xcoords, self.zcoords = self.shape.exterior.xy # create the x and y coords for plotting
 
     def findDistance(self, pos_drone):
         # find distance between obstacle and drone
