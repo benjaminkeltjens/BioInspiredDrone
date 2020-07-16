@@ -33,6 +33,8 @@ class Drone(object):
         self.theta_vel = 0. # [rad/s]
         self.accel = np.array([[0.], [gravity]]) # [m/s^2]
         self.theta_accel = 0. # [rad/s^2]
+        self.input_L = None # [N]
+        self.input_R = None # [N]
         self.shape = None
         self.updateShape()
         self.updateLaserAngles()
@@ -46,6 +48,8 @@ class Drone(object):
         # TODO: implement limits on rate change of input forces
         input_L = self.limitInput(input_L)
         input_R = self.limitInput(input_R)
+        self.input_L = input_L
+        self.input_R = input_R
 
         forces, moment = self.resolveDynamics(input_L, input_R) # [N], [N m]
         self.accel = forces/self.mass
@@ -61,6 +65,13 @@ class Drone(object):
 
         self.updateShape()
         self.updateLaserAngles()
+
+    def findInput(self):
+        # This is the function that calculates the input to the two motors. It is more a dummy parent function that should be overwritten by the child classes
+        # This dummy controller just hovers.
+        input_L = mass*-gravity/2
+        input_R = input_L
+        return input_L, input_R
 
     def recieveLaserDistances(self, laser_distances):
         # This is a seperate function for inputing the laser distances from the environment object
@@ -118,3 +129,38 @@ class Drone(object):
         if input > self.input_limit:
             return self.input_limit
         return input
+
+class CTRNN(Drone):
+
+    def __init__(self, drone_dict):
+
+
+        # Initialise Drone parent class
+        super().__init__(drone_dict["x_initial"], drone_dict["z_initial"], drone_dict["gravity"], drone_dict["mass"],
+        drone_dict["length"], drone_dict["height"], drone_dict["lasers"], drone_dict["laser_range"], drone_dict["input_limit"],
+        drone_dict["dt"])
+
+class SimpleLander(Drone):
+
+    def __init__(self, drone_dict, gain_p, gain_i):
+        self.error_i = 0
+        self.gain_p = gain_p
+        self.gain_i = gain_i
+        self.land_vel = 0.6
+
+        # Initialise Drone parent class
+        super().__init__(drone_dict["x_initial"], drone_dict["z_initial"], drone_dict["gravity"], drone_dict["mass"],
+        drone_dict["length"], drone_dict["height"], drone_dict["lasers"], drone_dict["laser_range"], drone_dict["input_limit"],
+        drone_dict["dt"])
+
+    def findInput(self):
+        # max_vel = np.sqrt(self.land_vel**2 - 2*(2*self.input_limit/self.mass)*self.pos[1][0])
+        target_z_dot = -min((0.1*self.pos[1][0]**2+self.land_vel),13)
+        error = target_z_dot - self.vel[1][0]
+        T = self.gain_p*error + self.gain_i*self.error_i
+        self.error_i += error
+        if abs(self.error_i*self.gain_i) > 50:
+            self.error_i = (self.error_i/self.error_i)*abs(50/self.gain_i)
+        input_L = T/2
+        input_R = input_L
+        return input_L, input_R

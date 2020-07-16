@@ -83,3 +83,86 @@ class Renderer(object):
     def initialiseDrone(self, drone):
         line, = self.ax.plot(drone.xcoords, drone.zcoords, 'k-')
         return line
+
+
+class DataStream(object):
+
+    def __init__(self, max_thrust, live):
+        # Initialise 4 subplots for z position, linear velocities, angular velocity and inputs
+        self.graphs = 4
+        self.live = live
+
+        if live:
+            plt.ion()
+        self.fig = plt.figure()
+
+        self.ax_pos_z = self.fig.add_subplot(self.graphs,1,1)
+        self.ax_pos_z.set_ylim(0, 40)
+
+        self.ax_vel = self.fig.add_subplot(self.graphs,1,2)
+        self.ax_vel.set_ylim(-10, 10)
+
+        self.ax_vel_theta = self.fig.add_subplot(self.graphs,1,3)
+        self.ax_vel_theta.set_ylim(-5, 5)
+
+        self.ax_thrust = self.fig.add_subplot(self.graphs,1,4)
+        self.ax_thrust.set_ylim(0, max_thrust*1.1)
+
+        self.vel_x_line, = self.ax_vel.plot([], [], 'r-')
+        self.vel_z_line, = self.ax_vel.plot([], [], 'b-')
+
+        self.vel_theta_line, = self.ax_vel_theta.plot([], [], 'k-')
+
+        self.input_L_line, = self.ax_thrust.plot([], [], 'r-')
+        self.input_R_line, = self.ax_thrust.plot([], [], 'b-')
+
+        self.pos_z_line, = self.ax_pos_z.plot([], [], 'b-')
+        self.time_data = []
+        self.pos_z_data = []
+        self.vel_x_data = []
+        self.vel_z_data = []
+        self.vel_theta_data = []
+        self.input_L_data = []
+        self.input_R_data = []
+
+
+    def updateGraphs(self, drone, total_time):
+        # Update data lists
+        self.time_data.append(total_time)
+        self.pos_z_data.append(drone.pos[1][0])
+        self.vel_x_data.append(drone.vel[0][0])
+        self.vel_z_data.append(drone.vel[1][0])
+        self.vel_theta_data.append(drone.theta_vel)
+        self.input_L_data.append(drone.input_L)
+        self.input_R_data.append(drone.input_R)
+
+        if self.live:
+            self.pos_z_line.set_ydata(self.pos_z_data); self.pos_z_line.set_xdata(self.time_data)
+            self.vel_x_line.set_ydata(self.vel_x_data); self.vel_x_line.set_xdata(self.time_data)
+            self.vel_z_line.set_ydata(self.vel_z_data); self.vel_z_line.set_xdata(self.time_data)
+            self.vel_theta_line.set_ydata(self.vel_theta_data); self.vel_theta_line.set_xdata(self.time_data)
+            self.input_L_line.set_ydata(self.input_L_data); self.input_L_line.set_xdata(self.time_data)
+            self.input_R_line.set_ydata(self.input_R_data); self.input_R_line.set_xdata(self.time_data)
+            self.ax_pos_z.set_xlim(0, self.time_data[-1]*1.2)
+            self.ax_vel.set_xlim(0, self.time_data[-1]*1.2)
+            self.ax_vel_theta.set_xlim(0, self.time_data[-1]*1.2)
+            self.ax_thrust.set_xlim(0, self.time_data[-1]*1.2)
+
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+
+    def plotEnd(self,pause):
+        self.pos_z_line.set_ydata(self.pos_z_data); self.pos_z_line.set_xdata(self.time_data)
+        self.vel_x_line.set_ydata(self.vel_x_data); self.vel_x_line.set_xdata(self.time_data)
+        self.vel_z_line.set_ydata(self.vel_z_data); self.vel_z_line.set_xdata(self.time_data)
+        self.vel_theta_line.set_ydata(self.vel_theta_data); self.vel_theta_line.set_xdata(self.time_data)
+        self.input_L_line.set_ydata(self.input_L_data); self.input_L_line.set_xdata(self.time_data)
+        self.input_R_line.set_ydata(self.input_R_data); self.input_R_line.set_xdata(self.time_data)
+        self.ax_pos_z.set_xlim(0, self.time_data[-1]*1.2)
+        self.ax_vel.set_xlim(0, self.time_data[-1]*1.2)
+        self.ax_vel_theta.set_xlim(0, self.time_data[-1]*1.2)
+        self.ax_thrust.set_xlim(0, self.time_data[-1]*1.2)
+        plt.ion()
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+        plt.pause(pause)
