@@ -19,6 +19,7 @@ class Renderer(object):
         self.ax = self.fig.add_subplot(111)
         plt.xlim(xlims[0], xlims[1])
         plt.ylim(ylims[0], ylims[1])
+        plt.gca().set_aspect('equal', adjustable='box')
         self.obstacle_lines = self.createObstacles(obstacles)
         self.laser_lines = self.initialiseLasers(drone)
         self.drone_line = self.initialiseDrone(drone)

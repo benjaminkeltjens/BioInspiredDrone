@@ -7,6 +7,7 @@ July 2020
 
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 from drone import Drone
 from environment import Environment, Obstacle
@@ -26,7 +27,7 @@ dt = 0.01 #[s]
 max_laser_length = 10
 
 # Starting position
-x_initial = -1. # [m]
+x_initial = -0.2 # [m]
 z_initial = 10. # [m]
 
 
@@ -54,16 +55,19 @@ xlims = [-10,10]
 ylims = [0,20]
 renderer = Renderer(obstacles, drone, xlims, ylims)
 
-
-# Simulation
+#Simulation
 collision = False
-
+total_t = 0
 while not collision:
-    input_L = 0#mass*-gravity/2
+    start = time.time()
+
+    input_L = mass*-gravity/2
     input_R = input_L
     drone.update(input_L, input_R)
     environment.update(drone)
     drone.recieveLaserDistances(environment.laser_distances)
     renderer.updateGraph(drone)
 
+    print(time.time()-start)
+    total_t += dt
     collision = environment.collision
