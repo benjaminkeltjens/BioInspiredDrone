@@ -25,6 +25,7 @@ class Drone(object):
         self.input_limit = input_limit # [N]
         self.input_rate_limit = input_rate_limit # [N/s]
         self.dt = dt # [s]
+        self.gravity = gravity # [m/s^2]
 
         # Initialise the drone static at a given location
 
@@ -41,7 +42,6 @@ class Drone(object):
         self.updateShape()
         self.updateLaserAngles()
 
-        self.gravity = gravity # [m/s^2]
 
 
     def update(self, input_L, input_R):
