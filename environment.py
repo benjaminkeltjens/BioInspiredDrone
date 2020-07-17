@@ -11,20 +11,26 @@ from shapely.geometry import Point
 
 class Environment(object):
 
-    def __init__(self, lasers, obstacles, max_laser_length):
+    def __init__(self, lasers, obstacles, max_laser_length, safe_vel, safe_angle):
         self.obstacles = obstacles # List of obstacles objects, unordered
         self.obstacle_distances = [None]*len(obstacles) # List of obstacle distances in same order as obstacles
         self.ordered_obstacles = [None]*len(obstacles) # Ordered indexes of self.obstacles based on distance to Drone
         self.laser_angles = [None]*lasers
         self.laser_distances = [None]*lasers
         self.max_laser_length = max_laser_length
+        self.safe_vel = safe_vel
+        self.safe_angle = safe_angle
         self.collision = False
+        self.touchdown = False
+        self.safe_touchdown = False
 
     def update(self, drone):
         self.laser_angles = drone.laser_list
         self.orderObstacles(drone.pos)
         self.findLaserDistances(drone.pos)
         self.collision = self.findCollision(drone)
+        self.touchdown = self.checkTouchdown(drone)
+        self.safe_touchdown = self.checkSafeTouchdown(drone)
 
     def orderObstacles(self, pos_drone):
         # Update and order the distancece of the obstacles
@@ -96,8 +102,6 @@ class Environment(object):
 
     def findCollision(self, drone):
         # Find if there are any collisions, return True or False
-        if drone.pos[1][0] < 0:
-            return True
 
         obstacles_to_observe = [] # list with index of obstacles within maximum range for collision
         for j in self.ordered_obstacles:
@@ -117,6 +121,17 @@ class Environment(object):
 
         return False
 
+    def checkTouchdown(self, drone):
+        if drone.pos[1][0]-(drone.height/2) < 0:
+            return True
+        return False
+
+    def checkSafeTouchdown(self, drone):
+        vel_cond = drone.total_vel <= self.safe_vel # Lower than landing velocity (norm velocity)
+        angle_cond = drone.theta_pos <= self.safe_angle or 2*np.pi-drone.theta_pos <= self.safe_angle # Lower than landing angle
+        if (drone.pos[1][0]-(drone.height/2) < 0) and vel_cond and angle_cond:
+            return True
+        return False
 
 class Obstacle(object):
 

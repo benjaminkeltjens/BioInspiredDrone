@@ -10,7 +10,7 @@ from shapely.geometry import Polygon
 class Drone(object):
     # The parent drone describes the kinematics and dynamics of the drone, handles inputs
 
-    def __init__(self, xposition, zposition, gravity, mass, length, height, lasers, laser_width, input_limit, dt):
+    def __init__(self, xposition, zposition, theta, gravity, mass, length, height, lasers, laser_width, input_limit, input_rate_limit, dt):
         # Describe the drone charactertics
 
         self.mass = mass # [kg]
@@ -22,19 +22,21 @@ class Drone(object):
         self.laser_width = laser_width # [rad]
         self.laser_list = [None] * lasers # [rad]
         self.laser_distances = [None] * lasers # [m]
-        self.input_limit = input_limit # [rad]
+        self.input_limit = input_limit # [N]
+        self.input_rate_limit = input_rate_limit # [N/s]
         self.dt = dt # [s]
 
         # Initialise the drone static at a given location
 
         self.pos = np.array([[xposition], [zposition]]) # x,z [m]
-        self.theta_pos = 0. # [rad]
+        self.theta_pos = theta # [rad]
         self.vel = np.array([[0.], [0.]]) # [m/s]
+        self.total_vel = np.linalg.norm(self.vel)
         self.theta_vel = 0. # [rad/s]
         self.accel = np.array([[0.], [gravity]]) # [m/s^2]
         self.theta_accel = 0. # [rad/s^2]
-        self.input_L = None # [N]
-        self.input_R = None # [N]
+        self.input_L = 0. # [N]
+        self.input_R = 0. # [N]
         self.shape = None
         self.updateShape()
         self.updateLaserAngles()
@@ -45,24 +47,27 @@ class Drone(object):
     def update(self, input_L, input_R):
         # Find dynamics, kinematics, and update states
 
-        # TODO: implement limits on rate change of input forces
-        input_L = self.limitInput(input_L)
-        input_R = self.limitInput(input_R)
+        # Limit inputs and save the to history
+        input_L = self.limitInput(input_L, self.input_L)
+        input_R = self.limitInput(input_R, self.input_R)
         self.input_L = input_L
         self.input_R = input_R
 
+        # Calculate dynamics
         forces, moment = self.resolveDynamics(input_L, input_R) # [N], [N m]
         self.accel = forces/self.mass
         self.theta_accel = moment/self.inertia
 
         # Euler Integration
         self.vel += self.accel * self.dt
+        self.total_vel = np.linalg.norm(self.vel)
         self.theta_vel += self.theta_accel * self.dt
 
         self.pos += self.vel * self.dt
         self.theta_pos += self.theta_vel * self.dt
         self.theta_pos = self.wrapAngle(self.theta_pos, 2*np.pi) # wrap angle to stay between bounds of 0 and 2pi
 
+        # Update the shapely representation of the drone and the laser angles
         self.updateShape()
         self.updateLaserAngles()
 
@@ -122,12 +127,16 @@ class Drone(object):
 
         self.xcoords, self.zcoords = self.shape.exterior.xy # create the x and y coords for plotting
 
-    def limitInput(self, input):
-        # Limit the input to between 0 and max input
-        if input < 0:
-            return 0
-        if input > self.input_limit:
-            return self.input_limit
+    def limitInput(self, input, previous_input):
+        # find the max and min possible inputs
+        max_rate = previous_input + self.input_rate_limit*self.dt
+        min_rate = previous_input - self.input_rate_limit*self.dt
+
+        if input < max(0, min_rate):
+            return max(0, min_rate)
+        if input > min(self.input_limit, max_rate):
+            return min(self.input_limit, max_rate)
+
         return input
 
 class CTRNN(Drone):
@@ -138,7 +147,7 @@ class CTRNN(Drone):
         # Initialise Drone parent class
         super().__init__(drone_dict["x_initial"], drone_dict["z_initial"], drone_dict["gravity"], drone_dict["mass"],
         drone_dict["length"], drone_dict["height"], drone_dict["lasers"], drone_dict["laser_range"], drone_dict["input_limit"],
-        drone_dict["dt"])
+        drone_dict["input_rate_limit"], drone_dict["dt"])
 
 class SimpleLander(Drone):
 
@@ -149,13 +158,13 @@ class SimpleLander(Drone):
         self.land_vel = 0.6
 
         # Initialise Drone parent class
-        super().__init__(drone_dict["x_initial"], drone_dict["z_initial"], drone_dict["gravity"], drone_dict["mass"],
-        drone_dict["length"], drone_dict["height"], drone_dict["lasers"], drone_dict["laser_range"], drone_dict["input_limit"],
-        drone_dict["dt"])
+        super().__init__(drone_dict["x_initial"], drone_dict["z_initial"], drone_dict["theta_intial"], drone_dict["gravity"],
+        drone_dict["mass"], drone_dict["length"], drone_dict["height"], drone_dict["lasers"], drone_dict["laser_range"],
+        drone_dict["input_limit"], drone_dict["input_rate_limit"], drone_dict["dt"])
 
     def findInput(self):
         # max_vel = np.sqrt(self.land_vel**2 - 2*(2*self.input_limit/self.mass)*self.pos[1][0])
-        target_z_dot = -min((0.1*self.pos[1][0]**2+self.land_vel),13)
+        target_z_dot = -min((0.1*self.pos[1][0]**2+self.land_vel),10)
         error = target_z_dot - self.vel[1][0]
         T = self.gain_p*error + self.gain_i*self.error_i
         self.error_i += error
