@@ -35,8 +35,8 @@ class Drone(object):
         self.theta_vel = 0. # [rad/s]
         self.accel = np.array([[0.], [gravity]]) # [m/s^2]
         self.theta_accel = 0. # [rad/s^2]
-        self.input_L = 0. # [N]
-        self.input_R = 0. # [N]
+        self.input_L = self.mass*-self.gravity/2 # [N] start at hover
+        self.input_R = self.mass*-self.gravity/2 # [N]
         self.shape = None
         self.updateShape()
         self.updateLaserAngles()
