@@ -10,7 +10,7 @@ from shapely.geometry import Polygon
 class Drone(object):
     # The parent drone describes the kinematics and dynamics of the drone, handles inputs
 
-    def __init__(self, xposition, zposition, theta, gravity, mass, length, height, lasers, laser_width, input_limit, input_rate_limit, dt):
+    def __init__(self, xposition, zposition, theta, gravity, drag_coeff, mass, length, height, lasers, laser_width, input_limit, input_rate_limit, dt):
         # Describe the drone charactertics
 
         self.mass = mass # [kg]
@@ -26,6 +26,7 @@ class Drone(object):
         self.input_rate_limit = input_rate_limit # [N/s]
         self.dt = dt # [s]
         self.gravity = gravity # [m/s^2]
+        self.drag_coeff = drag_coeff
 
         # Initialise the drone static at a given location
 
@@ -87,7 +88,8 @@ class Drone(object):
 
         body_thrust = input_L + input_R # Inputs as [N]
         global_thrust = np.array([[body_thrust*np.sin(self.theta_pos)], [body_thrust*np.cos(self.theta_pos)]])
-        global_forces = global_thrust + np.array([[0], [self.gravity*self.mass]])
+        global_drag = -self.vel*self.drag_coeff
+        global_forces = global_thrust + global_drag + np.array([[0], [self.gravity*self.mass]])
 
         moment = self.length * (input_L - input_R) * 0.5
 
@@ -159,8 +161,8 @@ class SimpleLander(Drone):
 
         # Initialise Drone parent class
         super().__init__(drone_dict["x_initial"], drone_dict["z_initial"], drone_dict["theta_intial"], drone_dict["gravity"],
-        drone_dict["mass"], drone_dict["length"], drone_dict["height"], drone_dict["lasers"], drone_dict["laser_range"],
-        drone_dict["input_limit"], drone_dict["input_rate_limit"], drone_dict["dt"])
+        drone_dict["drag_coeff"], drone_dict["mass"], drone_dict["length"], drone_dict["height"], drone_dict["lasers"],
+        drone_dict["laser_range"], drone_dict["input_limit"], drone_dict["input_rate_limit"], drone_dict["dt"])
 
     def findInput(self):
         # max_vel = np.sqrt(self.land_vel**2 - 2*(2*self.input_limit/self.mass)*self.pos[1][0])
