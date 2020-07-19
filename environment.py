@@ -23,14 +23,16 @@ class Environment(object):
         self.collision = False
         self.touchdown = False
         self.safe_touchdown = False
+        self.fitness = 0
 
-    def update(self, drone):
+    def update(self, drone, end):
         self.laser_angles = drone.laser_list
         self.orderObstacles(drone.pos)
         self.findLaserDistances(drone.pos)
         self.collision = self.findCollision(drone)
         self.touchdown = self.checkTouchdown(drone)
         self.safe_touchdown = self.checkSafeTouchdown(drone)
+        self.updateControllerFitness(drone,end)
 
     def orderObstacles(self, pos_drone):
         # Update and order the distancece of the obstacles
@@ -98,7 +100,7 @@ class Environment(object):
                     distance = min(d_1, d_2)
                     break # with the ordered list we can assume this is the closest object, to avoid analysing every obstacle
 
-            self.laser_distances[i] = distance
+            self.laser_distances[i] = min(distance,self.max_laser_length)
 
     def findCollision(self, drone):
         # Find if there are any collisions, return True or False
@@ -132,6 +134,26 @@ class Environment(object):
         if (drone.pos[1][0]-(drone.height/2) < 0) and vel_cond and angle_cond:
             return True
         return False
+
+    def updateControllerFitness(self, drone, end):
+        if self.collision: # if there is a collision with an obstacle
+            self.fitness -= 500
+            # self.fitness -= 500 * drone.total_vel
+        if end: # if there is no landing by the end of the run
+            self.fitness -= 100
+
+        if self.touchdown and not self.safe_touchdown: # If touchdown in unsafe manner
+            self.fitness -= 400
+
+            # if drone.theta_pos > np.pi:
+            #     angle_error = (2*np.pi-drone.theta_pos) - drone.safe_angle
+            # else:
+            #     angle_error = drone.theta_pos - drone.safe_angle
+            #
+            # self.fitness -= 400 * (abs(drone.safe_vel - drone.total_vel) + abs(angle_error))
+
+        self.fitness -= (drone.dt/120)*(drone.input_L + drone.input_R)
+        self.fitness -= (drone.dt/60)*drone.lasers
 
 class Obstacle(object):
 
