@@ -50,13 +50,13 @@ for i in range(total_obstacles):
 
 environment = Environment(preset.lasers, obstacles, preset.max_laser_length, preset.safe_vel, preset.safe_angle)
 # Initialise None lists in environment and drone
-environment.update(drone)
+environment.update(drone, False)
 drone.recieveLaserDistances(environment.laser_distances)
 
 # Initialise Renderer and Plots
 #Render Window limits
 draw_scene = True
-draw_graphs = True
+draw_graphs = False
 draw_final_graph = True
 
 if draw_scene:
@@ -69,20 +69,21 @@ data_stream = DataStream(preset.input_limit, draw_graphs)
 collision = False
 total_t = 0
 while not collision:
-    start = time.time()
+    # start = time.time()
 
     input_L, input_R = drone.findInput()
     drone.update(input_L, input_R)
-    environment.update(drone)
+    environment.update(drone, False)
     drone.recieveLaserDistances(environment.laser_distances)
     if draw_scene:
         renderer.updateGraph(drone)
     data_stream.updateGraphs(drone, total_t)
 
-    print(time.time()-start)
+    # print(time.time()-start)
     total_t += preset.dt
     collision = environment.collision or environment.touchdown
-    print(environment.safe_touchdown)
+    print(environment.fitness)
 
+print(environment.fitness)
 if draw_final_graph:
     data_stream.plotEnd(10)

@@ -103,7 +103,7 @@ class DataStream(object):
         self.ax_pos_z.set_ylabel("z Position [m]")
 
         self.ax_vel = self.fig.add_subplot(self.graphs,1,2)
-        self.ax_vel.set_ylim(-10, 10)
+        self.ax_vel.set_ylim(-30, 10)
         self.ax_vel.set_ylabel("Velocity [m/s]")
 
         self.ax_vel_theta = self.fig.add_subplot(self.graphs,1,3)

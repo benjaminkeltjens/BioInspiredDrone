@@ -14,6 +14,7 @@ class Presets(object):
 
     def loadDefault(self):
         self.gravity = -9.80665 # [m/s^2]
+        self.drag_coeff = 0.5
         self.mass = 5 # [kg]
         self.length = 0.3 # [m]
         self.height = 0.05 # [m]
@@ -22,7 +23,7 @@ class Presets(object):
         self.input_limit = 50 # [N]
         self.input_rate_limit = 500 # [N/s]
         self.dt = 0.01 #[s]
-        self.max_laser_length = 10
+        self.max_laser_length = 2
         self.safe_vel = 1 # [m/s] # Safe velocity to touchdown
         self.safe_angle = 15*np.pi/180 # [rad] # Safe angle from 0 to touchdown with
 
@@ -39,6 +40,7 @@ class Presets(object):
         "z_initial":self.z_initial,
         "theta_intial":self.theta_intial,
         "gravity":self.gravity,
+        "drag_coeff":self.drag_coeff,
         "mass":self.mass,
         "length":self.length,
         "height":self.height,
