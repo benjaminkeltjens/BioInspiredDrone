@@ -8,6 +8,7 @@ July 2020
 import numpy as np
 from drone import Drone
 from shapely.geometry import Point
+import random
 
 class Environment(object):
 
@@ -15,11 +16,24 @@ class Environment(object):
         self.obstacles = obstacles # List of obstacles objects, unordered
         self.obstacle_distances = [None]*len(obstacles) # List of obstacle distances in same order as obstacles
         self.ordered_obstacles = [None]*len(obstacles) # Ordered indexes of self.obstacles based on distance to Drone
+        self.lasers = lasers
         self.laser_angles = [None]*lasers
         self.laser_distances = [None]*lasers
         self.max_laser_length = max_laser_length
         self.safe_vel = safe_vel
         self.safe_angle = safe_angle
+        self.collision = False
+        self.touchdown = False
+        self.safe_touchdown = False
+        self.fitness = 0
+        self.x_wall = 10
+
+    def resetEnv(self, obstacles):
+        self.obstacles = obstacles
+        self.obstacle_distances = [None]*len(self.obstacles) # List of obstacle distances in same order as obstacles
+        self.ordered_obstacles = [None]*len(self.obstacles) # Ordered indexes of self.obstacles based on distance to Drone
+        self.laser_angles = [None]*self.lasers
+        self.laser_distances = [None]*self.lasers
         self.collision = False
         self.touchdown = False
         self.safe_touchdown = False
@@ -43,7 +57,7 @@ class Environment(object):
         self.ordered_obstacles = list(np.argsort(self.obstacle_distances)) # Find the sorted of the distances, and reverse
 
     def findLaserDistances(self, pos_drone):
-
+        right_wall_flag = False
         for i in range(len(self.laser_angles)):
             # For each laser
             laser_m = -np.tan(self.laser_angles[i])
@@ -100,6 +114,26 @@ class Environment(object):
                     distance = min(d_1, d_2)
                     break # with the ordered list we can assume this is the closest object, to avoid analysing every obstacle
 
+            # Check collision with walls
+            # right wall (+ x)
+            z_wall_right = laser_m*self.x_wall + laser_b
+            # check if in the same direction as the laser
+            relative_position_wall = np.array([[self.x_wall],[z_wall_right]])-pos_drone
+            if laser_vector.dot(relative_position_wall.flatten()) > 0:
+                    # set flag to true to not have to check the left wall as well
+                    # If contact is above the ground
+                    right_wall_flag = True
+                    if z_wall_right > 0.:
+                        distance_right_wall = np.sqrt((self.x_wall-pos_drone[0][0])**2 + (z_wall_right-pos_drone[1][0])**2)
+                        distance = min(distance,distance_right_wall)
+
+            if not right_wall_flag:
+                z_wall_left = -laser_m*self.x_wall + laser_b
+                if z_wall_left > 0.:
+                    distance_left_wall = np.sqrt((-self.x_wall-pos_drone[0][0])**2 + (z_wall_left-pos_drone[1][0])**2)
+                    distance = min(distance,distance_left_wall)
+
+            right_wall_flag = False
             self.laser_distances[i] = min(distance,self.max_laser_length)
 
     def findCollision(self, drone):
@@ -137,23 +171,24 @@ class Environment(object):
 
     def updateControllerFitness(self, drone, end):
         if self.collision: # if there is a collision with an obstacle
-            self.fitness -= 500
+            self.fitness -= 0*10000
             # self.fitness -= 500 * drone.total_vel
         if end: # if there is no landing by the end of the run
-            self.fitness -= 100
+            self.fitness -= 0*100
 
         if self.touchdown and not self.safe_touchdown: # If touchdown in unsafe manner
-            self.fitness -= 400
+            # self.fitness -= 400
 
-            # if drone.theta_pos > np.pi:
-            #     angle_error = (2*np.pi-drone.theta_pos) - drone.safe_angle
-            # else:
-            #     angle_error = drone.theta_pos - drone.safe_angle
-            #
-            # self.fitness -= 400 * (abs(drone.safe_vel - drone.total_vel) + abs(angle_error))
+            if drone.theta_pos > np.pi:
+                angle_error = (2*np.pi-drone.theta_pos) - self.safe_angle
+            else:
+                angle_error = drone.theta_pos - self.safe_angle
 
-        self.fitness -= (drone.dt/120)*(drone.input_L + drone.input_R)
-        self.fitness -= (drone.dt/60)*drone.lasers
+            theta_vel_error = abs(drone.theta_vel)
+
+            self.fitness -= 1 * (abs(self.safe_vel - drone.total_vel) + 1*abs(angle_error)+0*theta_vel_error)
+        # self.fitness -= (drone.dt/120)*(drone.input_L + drone.input_R)
+        # self.fitness -= (drone.dt/60)*drone.lasers
 
 class Obstacle(object):
 
@@ -166,3 +201,110 @@ class Obstacle(object):
     def findDistance(self, pos_drone):
         # find distance between obstacle and drone
         return np.linalg.norm(self.pos - pos_drone)
+
+class Course(object):
+
+    def __init__(self):
+        self.obstacles = []
+
+    def default(self):
+        self.obstacles = []
+        total_obstacles = 4
+        for i in range(total_obstacles):
+            x = 0 - 4*(((total_obstacles-1)/2)-i)
+            z = 5
+            r = 0.5
+            self.obstacles.append(Obstacle(x,z,r))
+        self.obstacles.append(Obstacle(0,2,0.5))
+        return self.obstacles
+
+    def moreComplicated(self):
+        self.obstacles = []
+        r1 = random.uniform(-1,1)
+        r2 = random.uniform(-1,1)
+        r3 = random.uniform(-1,1)
+        total_obstacles = 4
+        for i in range(total_obstacles):
+            x = 4*r1 - 2*(((total_obstacles-1)/2)-i)
+            z = 5
+            r = 0.5
+            self.obstacles.append(Obstacle(x,z,r))
+
+        for i in range(total_obstacles):
+            x = 4*r2 - 2*(((total_obstacles-1)/2)-i)
+            z = 10
+            r = 0.5
+            self.obstacles.append(Obstacle(x,z,r))
+
+        for i in range(total_obstacles):
+            x = 4*r3 - 2*(((total_obstacles-1)/2)-i)
+            z = 15
+            r = 0.5
+            self.obstacles.append(Obstacle(x,z,r))
+
+        self.obstacles.append(Obstacle(0,2,0.5))
+        return self.obstacles
+
+    def emptyCourse(self):
+        self.obstacles = []
+        self.obstacles.append(Obstacle(40,40,0.5))
+
+        return self.obstacles
+
+    def avoidCourse(self):
+        self.obstacles = []
+
+        total_obstacles = 8
+        for i in range(total_obstacles):
+            x = -6 - 1.1*(((total_obstacles-1)/2)-i)
+            z = 15
+            r = 0.5
+            self.obstacles.append(Obstacle(x,z,r))
+
+        for i in range(total_obstacles):
+            x = 6 - 1.1*(((total_obstacles-1)/2)-i)
+            z = 10
+            r = 0.5
+            self.obstacles.append(Obstacle(x,z,r))
+
+        for i in range(total_obstacles):
+            x = -3 - 1.1*(((total_obstacles-1)/2)-i)
+            z = 5
+            r = 0.5
+            self.obstacles.append(Obstacle(x,z,r))
+
+        self.obstacles.append(Obstacle(3,2,0.5))
+        self.obstacles.append(Obstacle(-4,10,0.5))
+        return self.obstacles
+
+    def avoidCourse2(self):
+        self.obstacles = []
+
+        total_obstacles =2
+        layers = 3
+        for j in range(layers):
+            modifier = j*1
+            for i in range(total_obstacles):
+                x = -6+modifier - 1.1*(((total_obstacles-1)/2)-i)
+                z = 5*(j+1)
+                r = 0.5
+                self.obstacles.append(Obstacle(x,z,r))
+            for i in range(total_obstacles):
+                x = -2+modifier - 1.1*(((total_obstacles-1)/2)-i)
+                z = 5*(j+1)
+                r = 0.5
+                self.obstacles.append(Obstacle(x,z,r))
+            for i in range(total_obstacles):
+                x = 2+modifier - 1.1*(((total_obstacles-1)/2)-i)
+                z = 5*(j+1)
+                r = 0.5
+                self.obstacles.append(Obstacle(x,z,r))
+            for i in range(total_obstacles):
+                x = 6+modifier - 1.1*(((total_obstacles-1)/2)-i)
+                z = 5*(j+1)
+                r = 0.5
+                self.obstacles.append(Obstacle(x,z,r))
+
+
+
+        return self.obstacles

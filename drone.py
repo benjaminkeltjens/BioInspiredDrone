@@ -32,7 +32,7 @@ class Drone(object):
 
         self.pos = np.array([[xposition], [zposition]]) # x,z [m]
         self.theta_pos = theta # [rad]
-        self.vel = np.array([[0.], [0.]]) # [m/s]
+        self.vel = np.array([[-0.], [-0.]]) # [m/s]
         self.total_vel = np.linalg.norm(self.vel)
         self.theta_vel = 0. # [rad/s]
         self.accel = np.array([[0.], [gravity]]) # [m/s^2]
@@ -141,15 +141,19 @@ class Drone(object):
 
         return input
 
-class CTRNN(Drone):
+class TrainingDrone(Drone):
 
     def __init__(self, drone_dict):
-
-
         # Initialise Drone parent class
-        super().__init__(drone_dict["x_initial"], drone_dict["z_initial"], drone_dict["gravity"], drone_dict["mass"],
-        drone_dict["length"], drone_dict["height"], drone_dict["lasers"], drone_dict["laser_range"], drone_dict["input_limit"],
-        drone_dict["input_rate_limit"], drone_dict["dt"])
+        super().__init__(drone_dict["x_initial"], drone_dict["z_initial"], drone_dict["theta_intial"], drone_dict["gravity"],
+        drone_dict["drag_coeff"], drone_dict["mass"], drone_dict["length"], drone_dict["height"], drone_dict["lasers"],
+        drone_dict["laser_range"], drone_dict["input_limit"], drone_dict["input_rate_limit"], drone_dict["dt"])
+
+    def resetParams(self, drone_dict):
+        super().__init__(drone_dict["x_initial"], drone_dict["z_initial"], drone_dict["theta_intial"], drone_dict["gravity"],
+        drone_dict["drag_coeff"], drone_dict["mass"], drone_dict["length"], drone_dict["height"], drone_dict["lasers"],
+        drone_dict["laser_range"], drone_dict["input_limit"], drone_dict["input_rate_limit"], drone_dict["dt"])
+
 
 class SimpleLander(Drone):
 
@@ -175,3 +179,52 @@ class SimpleLander(Drone):
         input_L = T/2
         input_R = input_L
         return input_L, input_R
+
+class AvoiderDrone(TrainingDrone):
+
+    def __init__(self, drone_dict, z_sat, x_sat, z_lim, x_lim, z_norm, x_norm, K_theta, land_vel, max_vel):
+        super().__init__(drone_dict)
+
+        self.z_sat = z_sat
+        self.x_sat = x_sat
+
+        self.z_lim = z_lim
+        self.x_lim = x_lim
+
+        self.z_norm = z_norm
+        self.x_norm = x_norm
+
+        self.K_theta = K_theta
+
+        self.land_vel = land_vel
+        self.max_vel = max_vel
+
+    def findDeltaVelocities(self):
+        # self.laser_list self.laser_distances
+        z_t = 0
+        x_t = 0
+        for i in range(len(self.laser_list)):
+            laser_angle = self.wrapAngle(self.theta_pos+self.laser_list[i],2*np.pi)
+            laser_distance = self.laser_distances[i]
+            if laser_distance <= self.z_lim:
+                z_t += -np.sin(laser_angle)*(1/(laser_distance+self.z_sat))
+            if laser_distance <= self.x_lim:# Adding limit on considered angles takes away the benefit on lower laser range
+                x_t += np.cos(laser_angle)*(1/(laser_distance+self.x_sat))
+
+        z_F = np.tanh(self.z_norm*z_t)*min(1,self.pos[1][0]/5)
+        x_F = np.tanh(self.x_norm*x_t)
+
+        delta_z_dot_a = z_F*(self.max_vel+0.3)
+        delta_x_dot = x_F*self.max_vel
+
+        delta_x_dot_d = self.findDownwardVelocity()
+        delta_z_dot = (delta_x_dot_d+delta_z_dot_a)/abs(delta_x_dot_d+delta_z_dot_a)*min(abs(delta_x_dot_d+delta_z_dot_a),self.max_vel)
+        # delta_x_dot = (delta_x_dot+0.00000001)/abs(delta_x_dot+0.00000001) * min(abs(delta_x_dot),self.max_vel)
+
+        delta_theta_dot = 0.
+
+        return delta_z_dot, delta_x_dot, delta_theta_dot
+
+    def findDownwardVelocity(self):
+        target_z_dot = min((0.1*self.pos[1][0]**2+self.land_vel),self.max_vel)
+        return target_z_dot

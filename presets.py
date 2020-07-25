@@ -23,13 +23,13 @@ class Presets(object):
         self.input_limit = 50 # [N]
         self.input_rate_limit = 500 # [N/s]
         self.dt = 0.01 #[s]
-        self.max_laser_length = 2
+        self.max_laser_length = 10
         self.safe_vel = 1 # [m/s] # Safe velocity to touchdown
-        self.safe_angle = 15*np.pi/180 # [rad] # Safe angle from 0 to touchdown with
+        self.safe_angle = 25*np.pi/180 # [rad] # Safe angle from 0 to touchdown with
 
         # Starting position
         self.x_initial = -0. # [m]
-        self.z_initial = 20. # [m]
+        self.z_initial = 25. # [m]
         self.theta_intial = np.pi*0/180 # [rad]
         self.createDroneDictionary()
 
@@ -50,3 +50,19 @@ class Presets(object):
         "input_rate_limit":self.input_rate_limit,
         "dt":self.dt
          }
+
+    def writeCTRNNConfigFile(self):
+        fin = open("config-ctrnn-template-avoid")
+        fout = open("config-ctrnn-avoid", "wt")
+        for line in fin:
+            fout.write(line.replace("num_inputs              = 8", "num_inputs              = "+str(self.lasers+4)))
+        fin.close()
+        fout.close()
+
+    def writeNNConfigFile(self):
+        fin = open("config-nn-template-avoid")
+        fout = open("config-nn-avoid", "wt")
+        for line in fin:
+            fout.write(line.replace("num_inputs              = 8", "num_inputs              = "+str(self.lasers+4)))
+        fin.close()
+        fout.close()
