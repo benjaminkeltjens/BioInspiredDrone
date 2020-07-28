@@ -30,7 +30,7 @@ class Presets(object):
         # Starting position
         self.x_initial = -0. # [m]
         self.z_initial = 25. # [m]
-        self.theta_intial = np.pi*0/180 # [rad]
+        self.theta_intial = 0*np.pi/180 # [rad]
         self.createDroneDictionary()
 
     def createDroneDictionary(self):
@@ -52,17 +52,17 @@ class Presets(object):
          }
 
     def writeCTRNNConfigFile(self):
-        fin = open("config-ctrnn-template-avoid")
-        fout = open("config-ctrnn-avoid", "wt")
+        fin = open("config-ctrnn-template")
+        fout = open("config-ctrnn", "wt")
         for line in fin:
-            fout.write(line.replace("num_inputs              = 8", "num_inputs              = "+str(self.lasers+4)))
+            fout.write(line.replace("num_inputs              = 8", "num_inputs              = "+str(4)))
         fin.close()
         fout.close()
 
     def writeNNConfigFile(self):
-        fin = open("config-nn-template-avoid")
-        fout = open("config-nn-avoid", "wt")
+        fin = open("config-nn-template")
+        fout = open("config-nn", "wt")
         for line in fin:
-            fout.write(line.replace("num_inputs              = 8", "num_inputs              = "+str(self.lasers+4)))
+            fout.write(line.replace("num_inputs              = 8", "num_inputs              = "+str(4)))
         fin.close()
         fout.close()

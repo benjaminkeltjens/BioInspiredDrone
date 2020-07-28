@@ -154,6 +154,28 @@ class TrainingDrone(Drone):
         drone_dict["drag_coeff"], drone_dict["mass"], drone_dict["length"], drone_dict["height"], drone_dict["lasers"],
         drone_dict["laser_range"], drone_dict["input_limit"], drone_dict["input_rate_limit"], drone_dict["dt"])
 
+    def updateStabilise(self, input_L, input_R):
+        # Find dynamics, kinematics, and update states
+
+        # Limit inputs and save the to history
+        input_L = self.limitInput(input_L, self.input_L)
+        input_R = self.limitInput(input_R, self.input_R)
+        self.input_L = input_L
+        self.input_R = input_R
+
+        # Calculate dynamics
+        forces, moment = self.resolveDynamics(input_L, input_R) # [N], [N m]
+        self.accel = forces/self.mass
+        self.theta_accel = moment/self.inertia
+
+        # Euler Integration
+        self.vel += self.accel * self.dt
+        self.total_vel = np.linalg.norm(self.vel)
+        self.theta_vel += self.theta_accel * self.dt
+
+        self.pos += self.vel * self.dt
+        self.theta_pos += self.theta_vel * self.dt
+        self.theta_pos = self.wrapAngle(self.theta_pos, 2*np.pi) # wrap angle to stay between bounds of 0 and 2pi
 
 class SimpleLander(Drone):
 
@@ -182,7 +204,7 @@ class SimpleLander(Drone):
 
 class AvoiderDrone(TrainingDrone):
 
-    def __init__(self, drone_dict, z_sat, x_sat, z_lim, x_lim, z_norm, x_norm, K_theta, land_vel, max_vel):
+    def __init__(self, drone_dict, z_sat, x_sat, z_lim, x_lim, z_norm, x_norm, z_up, land_vel, max_vel):
         super().__init__(drone_dict)
 
         self.z_sat = z_sat
@@ -194,8 +216,7 @@ class AvoiderDrone(TrainingDrone):
         self.z_norm = z_norm
         self.x_norm = x_norm
 
-        self.K_theta = K_theta
-
+        self.z_up = z_up
         self.land_vel = land_vel
         self.max_vel = max_vel
 
@@ -214,16 +235,14 @@ class AvoiderDrone(TrainingDrone):
         z_F = np.tanh(self.z_norm*z_t)*min(1,self.pos[1][0]/5)
         x_F = np.tanh(self.x_norm*x_t)
 
-        delta_z_dot_a = z_F*(self.max_vel+0.3)
+        delta_z_dot_a = z_F*(self.max_vel+self.z_up)
         delta_x_dot = x_F*self.max_vel
 
         delta_x_dot_d = self.findDownwardVelocity()
         delta_z_dot = (delta_x_dot_d+delta_z_dot_a)/abs(delta_x_dot_d+delta_z_dot_a)*min(abs(delta_x_dot_d+delta_z_dot_a),self.max_vel)
         # delta_x_dot = (delta_x_dot+0.00000001)/abs(delta_x_dot+0.00000001) * min(abs(delta_x_dot),self.max_vel)
 
-        delta_theta_dot = 0.
-
-        return delta_z_dot, delta_x_dot, delta_theta_dot
+        return delta_z_dot, delta_x_dot
 
     def findDownwardVelocity(self):
         target_z_dot = min((0.1*self.pos[1][0]**2+self.land_vel),self.max_vel)

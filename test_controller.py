@@ -44,8 +44,8 @@ drone = SimpleLander(preset.drone_dict, 10, 1)
 
 # Generate obstacles
 course = Course()
-easy_obstacles = course.default()
-obstacles = course.moreComplicated()
+# easy_obstacles = course.default()
+# obstacles = course.moreComplicated()
 obstacles = course.emptyCourse()
 
 environment = Environment(preset.lasers, obstacles, preset.max_laser_length, preset.safe_vel, preset.safe_angle)
@@ -60,7 +60,7 @@ draw_graphs = False
 draw_final_graph = True
 
 if draw_scene:
-    xlims = [-10,10]
+    xlims = [-11,11]
     ylims = [0,40]
     renderer = Renderer(obstacles, drone, xlims, ylims)
 data_stream = DataStream(preset.input_limit, draw_graphs)
@@ -69,19 +69,20 @@ data_stream = DataStream(preset.input_limit, draw_graphs)
 collision = False
 total_t = 0
 
-# Load controller
-with open('stabilise_controller', 'rb') as f:
-    c = pickle.load(f)
-
-local_dir = os.path.dirname(__file__)
-# config_path = os.path.join(local_dir, 'config-ctrnn')
-config_path = os.path.join(local_dir, 'config-stabilise')
-config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
-                     neat.DefaultSpeciesSet, neat.DefaultStagnation,
-                     config_path)
+def loadStabiliser(N):
+    local_dir = os.path.dirname(__file__)
+    folder_paths = ['first_stabiliser', 'second_stabiliser', 'third_aggressive_stabiliser', 'fourth_stabiliser', 'fifth_aggressive_stabiliser']
+    with open(folder_paths[N-1]+'/winner', 'rb') as f:
+        stabiliser = pickle.load(f)
+    config_path_stabilise = os.path.join(local_dir, folder_paths[N-1]+'/config-nn')
+    config_stabilise = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+    neat.DefaultSpeciesSet, neat.DefaultStagnation,
+    config_path_stabilise)
+    return neat.nn.FeedForwardNetwork.create(stabiliser, config_stabilise)
 
 # net = neat.ctrnn.CTRNN.create(c, config, drone.dt)
-net = neat.nn.FeedForwardNetwork.create(c, config)
+net = loadStabiliser(5)
+
 while not collision and total_t<20.0:
     # start = time.time()
 

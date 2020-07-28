@@ -178,3 +178,42 @@ class DataStream(object):
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         plt.pause(pause)
+
+class GeneticStream(object):
+
+    def __init__(self):
+        # Initialise 4 subplots for z position, linear velocities, angular velocity and inputs
+
+        plt.ion()
+        self.fig = plt.figure()
+
+        self.graph = self.fig.add_subplot(111)
+        self.graph.set_ylabel("Fitness [-]")
+        self.graph.set_xlabel("Generation [-]")
+        # self.graph.set_yscale('log')
+
+        self.fitness_line, = self.graph.plot([], [], 'r-')
+
+        self.generation_data = []
+        self.fitness_data = []
+
+    def updateGraph(self, fitness, generation):
+        # Update data lists
+        self.generation_data.append(generation)
+        self.fitness_data.append(fitness)
+
+        self.fitness_line.set_ydata(self.fitness_data); self.fitness_line.set_xdata(self.generation_data)
+        self.graph.set_xlim(0, self.generation_data[-1]*1.1)
+        self.graph.set_ylim(min(self.fitness_data)*1.1, 0)
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+
+    def plotEnd(self, pause):
+        self.fitness_line.set_ydata(fitness); self.fitness_line.set_xdata(self.generation_data)
+        self.graph.set_xlim(0, self.generation_data[-1]*1.1)
+        self.graph.set_ylim(min(self.fitness_data)*1.1, 0)
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+        plt.pause(pause)

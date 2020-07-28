@@ -171,7 +171,7 @@ class Environment(object):
 
     def updateControllerFitness(self, drone, end):
         if self.collision: # if there is a collision with an obstacle
-            self.fitness -= 0*10000
+            self.fitness -= 0*10000.
             # self.fitness -= 500 * drone.total_vel
         if end: # if there is no landing by the end of the run
             self.fitness -= 0*100
@@ -186,9 +186,9 @@ class Environment(object):
 
             theta_vel_error = abs(drone.theta_vel)
 
-            self.fitness -= 1 * (abs(self.safe_vel - drone.total_vel) + 1*abs(angle_error)+0*theta_vel_error)
+            self.fitness -= 5*2 * (abs(self.safe_vel - drone.total_vel) + (50*2/np.pi)*abs(angle_error)+0*theta_vel_error)
         # self.fitness -= (drone.dt/120)*(drone.input_L + drone.input_R)
-        # self.fitness -= (drone.dt/60)*drone.lasers
+        self.fitness -= (drone.dt/2)*drone.lasers
 
 class Obstacle(object):
 
