@@ -15,13 +15,14 @@ import neat
 
 class GeneticAlgorithm(object):
 
-    def __init__(self, threshold, generation_limit, N_pop, mutation_variance, obstacle_courses):
+    def __init__(self, threshold, generation_limit, N_pop, mutation_variance, obstacle_courses, seed):
 
         self.threshold = threshold
         self.generation_limit = generation_limit
         self.N_pop = N_pop
         self.parents_in_new_gen = 0.25
         self.mutation_variance = mutation_variance
+        self.seed = seed
 
         # Create Folder name for data storage
         date_time = str(datetime.datetime.now())[:-10]
@@ -53,7 +54,6 @@ class GeneticAlgorithm(object):
 
         self.population = self.initialisePopulation()
         self.universal_best_fitness = -100000.
-        self.universal_best_genome = None
 
         self.preset = Presets()
         self.preset.loadDefault()
@@ -119,7 +119,7 @@ class GeneticAlgorithm(object):
             crossover_population.append(child)
 
         # Add previous generation to new generation
-        parents_to_new = np.random.choice(len(self.population), int(len(self.population)*self.parents_in_new_gen-1), replace=False, p=normalised_fitnesses)
+        parents_to_new = np.random.choice(len(self.population), int(len(self.population)*self.parents_in_new_gen)-1, replace=False, p=normalised_fitnesses)
         for idx in parents_to_new:
             crossover_population.append(self.population[idx])
 
@@ -151,7 +151,7 @@ class GeneticAlgorithm(object):
 
     def normaliseFitness(self):
 
-        original_fitnesses = np.array(self.fitnesses)
+        original_fitnesses = np.array(self.cummu_fitnesses)
         # original_fitnesses = np.array([-10000, -12, -2, -10000])
         original_fitnesses -= np.min(original_fitnesses)
 
@@ -175,41 +175,49 @@ class GeneticAlgorithm(object):
 
         print("\n Performing Mutation")
         new_population = self.mutation(crossover_population)
-        new_population.append(self.universal_best_genome)
-
+        new_population.append(self.readBestGenome())
+        print("Last Genome: " + str(new_population[-1]))
+        print(len(new_population))
 
         return new_population
 
     def run(self):
         self.generation_count = 0
 
-        pool = multiprocessing.Pool(multiprocessing.cpu_count())
 
         while self.generation_count <= self.generation_limit:
             print("Running Generation " + str(self.generation_count))
             print("----------------------------------------------")
 
             self.fitnesses = []
+            self.cummu_fitnesses = []
             start = time.time()
 
+            pool = multiprocessing.Pool(multiprocessing.cpu_count())
             # Run processes in parallel
-            self.fitnesses = pool.map(self.runOneGenome, self.population)
+            self.fitnesses = pool.map(self.runOneGenome, self.population.copy())
             # for i in range(len(self.population)):
             #     self.fitnesses.append(self.runOneGenome(self.population[i]))
+            for i in range(len(self.fitnesses)):
+                self.cummu_fitnesses.append(self.fitnesses[i][0])
 
-            self.writeData(self.population.copy(),self.fitnesses.copy(),False)
+            self.writeData(self.population.copy(),self.fitnesses.copy())
 
             # If best genome so far store it!
-            if max(self.fitnesses) > self.universal_best_fitness:
+            if max(self.cummu_fitnesses) > self.universal_best_fitness:
+                print("CHANGING BEST RUN")
                 self.universal_best_generation = self.generation_count
-                self.universal_best_fitness = max(self.fitnesses)
-                self.universal_best_genome = self.population[self.fitnesses.index(max(self.fitnesses))]
+                self.universal_best_fitness = max(self.cummu_fitnesses)
+                self.writeBestGenome(self.population[self.cummu_fitnesses.index(max(self.cummu_fitnesses))])
 
+            print("Best Historical fitness: " + str(self.universal_best_fitness))
+            print("Best Historical Genome: " + str(self.readBestGenome()))
+            assert(self.runOneGenome(self.readBestGenome())[0] == self.universal_best_fitness)
 
-            print("Best Fitness is: " + str(max(self.fitnesses)))
-            print("Average Fitness is: " + str(sum(self.fitnesses)/len(self.fitnesses)))
+            print("Best Fitness is: " + str(max(self.cummu_fitnesses)))
+            print("Average Fitness is: " + str(sum(self.cummu_fitnesses)/len(self.cummu_fitnesses)))
 
-            if max(self.fitnesses) >= self.threshold:
+            if max(self.cummu_fitnesses) >= self.threshold:
                 print("Achieved Threshold Fitness Value!")
                 self.closeAlgorithm()
                 break
@@ -226,6 +234,7 @@ class GeneticAlgorithm(object):
     def runOneGenome(self, genome):
         drone, environment, stabiliser, preset_copy = self.decodeGenome(genome)
         fitnesses = []
+        information = []
         # For each obstacle course
 
         for c in range(len(self.obstacle_courses)):
@@ -249,7 +258,7 @@ class GeneticAlgorithm(object):
                 drone.update(action[0]*drone.input_limit, action[1]*drone.input_limit)
 
                 if abs(drone.pos[0][0]) > 10.:
-                    environment.fitness -= 10000
+                    environment.fitness -= 2000
                     break
 
                 environment.update(drone, False)
@@ -260,8 +269,11 @@ class GeneticAlgorithm(object):
 
             environment.fitness -= 16*drone.pos[1][0]
             fitnesses.append(environment.fitness)
+            information.append([environment.fitness, environment.energy, drone.pos[1][0], drone.vel[1][0], drone.theta_pos])
         # Return the worse fitness
-        return min(fitnesses)
+        min_fitness = min(fitnesses)
+        idx = fitnesses.index(min_fitness)
+        return information[idx]
 
     def loadStabiliser(self, N):
         local_dir = os.path.dirname(__file__)
@@ -274,15 +286,25 @@ class GeneticAlgorithm(object):
         config_path_stabilise)
         return neat.nn.FeedForwardNetwork.create(stabiliser, config_stabilise)
 
-    def writeData(self, population, fitnesses, objective_values):
+    def writeData(self, population, fitnesses):
         pop_np = np.array(population)
-        for i in range(len(fitnesses)):
-            fitnesses[i] = [fitnesses[i]]
+        # for i in range(len(fitnesses)):
+        #     fitnesses[i] = [fitnesses[i]]
         fit_np = np.array(fitnesses)
+
         # obj_np = np.array(objective_values)
         # full_array = np.concatenate((pop_np, fit_np, obj_np), axis = 1)
         full_array = np.concatenate((pop_np, fit_np), axis = 1)
         np.savetxt(self.folder_name+'/generation_'+str(self.generation_count)+'.txt', full_array )
+
+    def writeBestGenome(self,genome):
+        gen_np = np.array(genome.copy())
+        np.savetxt(self.folder_name+'/best_genome.txt', gen_np)
+
+    def readBestGenome(self):
+        return_list = list(np.loadtxt(self.folder_name+'/best_genome.txt'))
+        return_list[8] = int(return_list[8]); return_list[9] = int(return_list[9]); return_list[10] = int(return_list[10])
+        return return_list
 
     def closeAlgorithm(self):
         #

@@ -7,6 +7,9 @@ July 2020
 from shapely.geometry import Polygon, Point
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import pickle
+from genetic import GeneticAlgorithm
 
 
 class Renderer(object):
@@ -85,7 +88,6 @@ class Renderer(object):
     def initialiseDrone(self, drone):
         line, = self.ax.plot(drone.xcoords, drone.zcoords, 'k-')
         return line
-
 
 class DataStream(object):
 
@@ -217,3 +219,71 @@ class GeneticStream(object):
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         plt.pause(pause)
+
+class GeneticPlot(object):
+
+    def __init__(self, folder_path):
+        self.folder_path = folder_path
+        try:
+            with open(folder_path+'/algorithm_pickle', 'rb') as f:
+                self.genetic_alg = pickle.load(f)
+        except:
+            print("Pickle Doesn't Exist")
+        self.loadData()
+
+    def loadData(self):
+        files = os.listdir(self.folder_path)
+        self.generation_data = {}
+        for i in range(len(files)):
+            file_name = files[i]
+            if file_name[:3] == 'gen':
+                generation = int(file_name[11:-4])
+                self.generation_data[generation] = np.loadtxt(self.folder_path+'/'+file_name)
+        self.generations = len(self.generation_data)
+        self.fitness_data = {}
+        self.energy_data = {}
+        self.height_data = {}
+        for i in range(self.generations):
+            self.fitness_data[i] = self.generation_data[i][:,-5]
+            self.energy_data[i] = self.generation_data[i][:,-4]
+            self.height_data[i] = self.generation_data[i][:,-1]
+
+
+        temp = list(self.generation_data.keys())
+        temp.sort()
+        self.sorted_generation_keys = temp
+
+        # print(self.generation_data)
+
+    def plotHistory(self):
+        average_fitnesses = []
+        max_fitnesses = []
+        for i in self.sorted_generation_keys:
+            fitnesses = self.fitness_data[i]
+            average_fitnesses.append(np.sum(fitnesses)/len(fitnesses))
+            max_fitnesses.append(np.max(fitnesses))
+        self.history_fig = plt.figure()
+        self.history_ax = self.history_fig.add_subplot(1,1,1)
+        self.history_ax.set_ylabel("Fitness [-]")
+        self.history_ax.set_xlabel("Generation [-]")
+        self.average_line, = self.history_ax.plot(self.sorted_generation_keys, average_fitnesses, 'b-', label='Average fitness')
+        self.max_line, = self.history_ax.plot(self.sorted_generation_keys, max_fitnesses, 'r-', label='Max fitness')
+        self.history_ax.legend()
+        plt.show()
+    def plotParetoFront(self):
+        # For every genome plot the energy and height
+        energys = []
+        heights = []
+        for i in self.sorted_generation_keys:
+            for j in range(len(self.fitness_data[i])):
+                energys.append(self.energy_data[i][j])
+                heights.append(self.height_data[i][j])
+        self.pareto_fig = plt.figure()
+        self.pareto_ax = self.pareto_fig.add_subplot(1,1,1)
+        self.pareto_ax.set_ylabel("Final Height [m]")
+        self.pareto_ax.set_xlabel("Normalised Energy [J]")
+        self.pareto_line = self.pareto_ax.scatter(energys, heights)
+        plt.show()
+
+    def plotCharacteristic(self,idx):
+        pass

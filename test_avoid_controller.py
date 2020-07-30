@@ -28,8 +28,9 @@ course = Course()
 # obstacles = course.default()
 # obstacles = course.moreComplicated()
 # obstacles = course.emptyCourse()
-obstacles = course.avoidCourse()
+# obstacles = course.avoidCourse()
 # obstacles = course.avoidCourse2()
+obstacles = course.popcornCourse()
 
 ## Set up problem
 folder_names = os.listdir('data')
@@ -38,8 +39,8 @@ print(folder_names)
 # Load up most recent Genetic Algorithm Run
 with open('./data/'+folder_names[-1]+'/algorithm_pickle', 'rb') as f:
     genetic_alg = pickle.load(f)
-drone, environment, stabiliser, preset = genetic_alg.decodeGenome(genetic_alg.universal_best_genome)
-
+drone, environment, stabiliser, preset = genetic_alg.decodeGenome(genetic_alg.readBestGenome())
+print(genetic_alg.universal_best_generation)
 environment.resetEnv(obstacles)
 
 # Initialise None lists in environment and drone

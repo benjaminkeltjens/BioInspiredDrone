@@ -17,19 +17,21 @@ from environment import Course
 import neat
 
 
-random.seed(5)
-
 # Generate obstacles
 course = Course()
 course_1 = course.avoidCourse()
 course_2 = course.avoidCourse2()
-courses = [course_1, course_2]
+course_3 = course.popcornCourse()
+courses = [course_1, course_2, course_3]
+
+seed = 7.
+random.seed(seed)
 
 # Algorithm Paramaters
-threshold = -30.
-generation_limit = 25
+threshold = 0.
+generation_limit =  200
 population_size = 48 # Divisible by 4
-mutation_variance = 2.0
+mutation_variance = 1.0
 
-algorithm = GeneticAlgorithm(threshold, generation_limit, population_size, mutation_variance, courses)
+algorithm = GeneticAlgorithm(threshold, generation_limit, population_size, mutation_variance, courses, seed)
 algorithm.run()

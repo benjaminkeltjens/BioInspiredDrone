@@ -26,6 +26,7 @@ class Environment(object):
         self.touchdown = False
         self.safe_touchdown = False
         self.fitness = 0
+        self.energy = 0
         self.x_wall = 10
 
     def resetEnv(self, obstacles):
@@ -38,6 +39,7 @@ class Environment(object):
         self.touchdown = False
         self.safe_touchdown = False
         self.fitness = 0
+        self.energy = 0
 
     def update(self, drone, end):
         self.laser_angles = drone.laser_list
@@ -171,10 +173,10 @@ class Environment(object):
 
     def updateControllerFitness(self, drone, end):
         if self.collision: # if there is a collision with an obstacle
-            self.fitness -= 0*10000.
+            self.fitness -= 1*2000.
             # self.fitness -= 500 * drone.total_vel
         if end: # if there is no landing by the end of the run
-            self.fitness -= 0*100
+            self.fitness -= 1*1000
 
         if self.touchdown and not self.safe_touchdown: # If touchdown in unsafe manner
             # self.fitness -= 400
@@ -189,6 +191,7 @@ class Environment(object):
             self.fitness -= 5*2 * (abs(self.safe_vel - drone.total_vel) + (50*2/np.pi)*abs(angle_error)+0*theta_vel_error)
         # self.fitness -= (drone.dt/120)*(drone.input_L + drone.input_R)
         self.fitness -= (drone.dt/2)*drone.lasers
+        self.energy += drone.lasers*drone.dt
 
 class Obstacle(object):
 
@@ -304,7 +307,26 @@ class Course(object):
                 z = 5*(j+1)
                 r = 0.5
                 self.obstacles.append(Obstacle(x,z,r))
+        return self.obstacles
 
+    def popcornCourse(self):
+        self.obstacles = []
+        random.seed(3.5)
+        obstacle_locations = []
+        n_obstacles = 20
+        min_distance = 3
+        while len(self.obstacles) < n_obstacles:
+            fail_flag = False
+            temp_x = random.uniform(-9.5,9.5)
+            temp_y = random.uniform(1.0,20.0)
 
+            for i in range(len(obstacle_locations)):
+                distance = np.sqrt((obstacle_locations[i][0]-temp_x)**2+(obstacle_locations[i][1]-temp_y)**2)
+                if distance < min_distance:
+                    fail_flag = True
+                    break
 
+            if not fail_flag:
+                obstacle_locations.append((temp_x,temp_y))
+                self.obstacles.append(Obstacle(temp_x,temp_y,0.5))
         return self.obstacles
