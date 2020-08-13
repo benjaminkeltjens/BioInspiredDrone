@@ -29,6 +29,8 @@ class Renderer(object):
         self.laser_lines = self.initialiseLasers(drone)
         self.drone_line = self.initialiseDrone(drone)
         self.ground_line, = self.ax.plot([xlims[0], xlims[1]], [0, 0], 'g-')
+        self.left_line, = self.ax.plot([10, 10], [0, 50], 'k-')
+        self.right_line, = self.ax.plot([-10, -10], [0, 50], 'k-')
 
     def updateGraph(self, drone):
         # Update Drone
@@ -93,7 +95,7 @@ class DataStream(object):
 
     def __init__(self, max_thrust, live):
         # Initialise 4 subplots for z position, linear velocities, angular velocity and inputs
-        self.graphs = 4
+        self.graphs = 5
         self.live = live
 
         if live:
@@ -104,21 +106,28 @@ class DataStream(object):
         self.ax_pos_z.set_ylim(0, 40)
         self.ax_pos_z.set_ylabel("z Position [m]")
 
-        self.ax_vel = self.fig.add_subplot(self.graphs,1,2)
+        self.ax_pos_theta = self.fig.add_subplot(self.graphs,1,2)
+        self.ax_pos_theta.set_ylim(-np.pi/3, np.pi/3)
+        self.ax_pos_theta.set_ylabel("$\theta$ Position [rad]")
+
+        self.ax_vel = self.fig.add_subplot(self.graphs,1,3)
         self.ax_vel.set_ylim(-30, 10)
         self.ax_vel.set_ylabel("Velocity [m/s]")
 
-        self.ax_vel_theta = self.fig.add_subplot(self.graphs,1,3)
+        self.ax_vel_theta = self.fig.add_subplot(self.graphs,1,4)
         self.ax_vel_theta.set_ylim(-5, 5)
         self.ax_vel_theta.set_ylabel("Angular Velocity [rad/s]")
 
-        self.ax_thrust = self.fig.add_subplot(self.graphs,1,4)
+        self.ax_thrust = self.fig.add_subplot(self.graphs,1,5)
         self.ax_thrust.set_ylim(0, max_thrust*1.1)
         self.ax_thrust.set_ylabel("Thrust Input [N]")
         self.ax_thrust.set_xlabel("Time [s]")
 
         self.pos_z_line, = self.ax_pos_z.plot([], [], 'b-', label='z position')
         self.ax_pos_z.legend()
+
+        self.pos_theta_line, = self.ax_pos_theta.plot([], [], 'b-', label='theta position')
+        self.ax_pos_theta.legend()
 
         self.vel_x_line, = self.ax_vel.plot([], [], 'r-', label='x velocity')
         self.vel_z_line, = self.ax_vel.plot([], [], 'b-', label='z velocity')
@@ -133,6 +142,7 @@ class DataStream(object):
 
         self.time_data = []
         self.pos_z_data = []
+        self.pos_theta_data = []
         self.vel_x_data = []
         self.vel_z_data = []
         self.vel_theta_data = []
@@ -144,6 +154,12 @@ class DataStream(object):
         # Update data lists
         self.time_data.append(total_time)
         self.pos_z_data.append(drone.pos[1][0])
+        theta_raw = drone.theta_pos
+        if theta_raw < np.pi:
+            theta_input = theta_raw
+        else:
+            theta_input = theta_raw - 2*np.pi
+        self.pos_theta_data.append(theta_input)
         self.vel_x_data.append(drone.vel[0][0])
         self.vel_z_data.append(drone.vel[1][0])
         self.vel_theta_data.append(drone.theta_vel)
@@ -152,12 +168,14 @@ class DataStream(object):
 
         if self.live:
             self.pos_z_line.set_ydata(self.pos_z_data); self.pos_z_line.set_xdata(self.time_data)
+            self.pos_theta_line.set_ydata(self.pos_theta_data); self.pos_theta_line.set_xdata(self.time_data)
             self.vel_x_line.set_ydata(self.vel_x_data); self.vel_x_line.set_xdata(self.time_data)
             self.vel_z_line.set_ydata(self.vel_z_data); self.vel_z_line.set_xdata(self.time_data)
             self.vel_theta_line.set_ydata(self.vel_theta_data); self.vel_theta_line.set_xdata(self.time_data)
             self.input_L_line.set_ydata(self.input_L_data); self.input_L_line.set_xdata(self.time_data)
             self.input_R_line.set_ydata(self.input_R_data); self.input_R_line.set_xdata(self.time_data)
             self.ax_pos_z.set_xlim(0, self.time_data[-1]*1.1)
+            self.ax_pos_theta.set_xlim(0, self.time_data[-1]*1.1)
             self.ax_vel.set_xlim(0, self.time_data[-1]*1.1)
             self.ax_vel_theta.set_xlim(0, self.time_data[-1]*1.1)
             self.ax_thrust.set_xlim(0, self.time_data[-1]*1.1)
@@ -167,12 +185,14 @@ class DataStream(object):
 
     def plotEnd(self,pause):
         self.pos_z_line.set_ydata(self.pos_z_data); self.pos_z_line.set_xdata(self.time_data)
+        self.pos_theta_line.set_ydata(self.pos_theta_data); self.pos_theta_line.set_xdata(self.time_data)
         self.vel_x_line.set_ydata(self.vel_x_data); self.vel_x_line.set_xdata(self.time_data)
         self.vel_z_line.set_ydata(self.vel_z_data); self.vel_z_line.set_xdata(self.time_data)
         self.vel_theta_line.set_ydata(self.vel_theta_data); self.vel_theta_line.set_xdata(self.time_data)
         self.input_L_line.set_ydata(self.input_L_data); self.input_L_line.set_xdata(self.time_data)
         self.input_R_line.set_ydata(self.input_R_data); self.input_R_line.set_xdata(self.time_data)
         self.ax_pos_z.set_xlim(0, self.time_data[-1]*1.2)
+        self.ax_pos_theta.set_xlim(0, self.time_data[-1]*1.2)
         self.ax_vel.set_xlim(0, self.time_data[-1]*1.2)
         self.ax_vel_theta.set_xlim(0, self.time_data[-1]*1.2)
         self.ax_thrust.set_xlim(0, self.time_data[-1]*1.2)
@@ -243,10 +263,19 @@ class GeneticPlot(object):
         self.fitness_data = {}
         self.energy_data = {}
         self.height_data = {}
+        self.velocity_data = {}
+        self.angle_data = {}
+        self.N_laser = {}
         for i in range(self.generations):
+            self.N_laser[i] = self.generation_data[i][:,-7]
             self.fitness_data[i] = self.generation_data[i][:,-5]
             self.energy_data[i] = self.generation_data[i][:,-4]
-            self.height_data[i] = self.generation_data[i][:,-1]
+            self.height_data[i] = self.generation_data[i][:,-3]
+            self.velocity_data[i] = self.generation_data[i][:,-2]
+            angle = self.generation_data[i][:,-1]
+            for n in range(len(angle)):
+                angle[n] = abs(min(2*np.pi-angle[n],angle[n]))
+            self.angle_data[i] = angle
 
 
         temp = list(self.generation_data.keys())
@@ -270,19 +299,44 @@ class GeneticPlot(object):
         self.max_line, = self.history_ax.plot(self.sorted_generation_keys, max_fitnesses, 'r-', label='Max fitness')
         self.history_ax.legend()
         plt.show()
+
+    def addMaxFitnesses(self,figure):
+        max_fitnesses = []
+        for i in self.sorted_generation_keys:
+            fitnesses = self.fitness_data[i]
+            max_fitnesses.append(np.max(fitnesses))
+        lab = 'Mutation = ' + str(self.genetic_alg.mutation_variance)
+        figure.plot(self.sorted_generation_keys, max_fitnesses, label=lab)
+
+    def addStdDev(self,figure):
+        std_devs = []
+        for i in self.sorted_generation_keys:
+            fitnesses = self.fitness_data[i]
+            std_devs.append(np.std(fitnesses))
+        lab = 'Mutation = ' + str(self.genetic_alg.mutation_variance)
+        figure.plot(self.sorted_generation_keys, std_devs, label=lab)
+
     def plotParetoFront(self):
         # For every genome plot the energy and height
         energys = []
         heights = []
+        n_laser = []
+        # velocities = []
+        # angles = []
         for i in self.sorted_generation_keys:
             for j in range(len(self.fitness_data[i])):
+                n_laser.append(self.N_laser[i][j])
                 energys.append(self.energy_data[i][j])
                 heights.append(self.height_data[i][j])
+                # velocities.append(self.velocity_data[i][j])
+                # angles.append(self.angle_data[i][j])
         self.pareto_fig = plt.figure()
         self.pareto_ax = self.pareto_fig.add_subplot(1,1,1)
         self.pareto_ax.set_ylabel("Final Height [m]")
         self.pareto_ax.set_xlabel("Normalised Energy [J]")
-        self.pareto_line = self.pareto_ax.scatter(energys, heights)
+        cm = plt.cm.get_cmap('RdYlBu')
+        self.pareto_line = self.pareto_ax.scatter(energys, heights, c=n_laser, cmap =cm)
+        plt.colorbar(self.pareto_line)
         plt.show()
 
     def plotCharacteristic(self,idx):

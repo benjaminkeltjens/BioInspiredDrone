@@ -20,9 +20,6 @@ from genetic import GeneticAlgorithm
 
 import neat
 
-
-random.seed(5)
-
 # Generate obstacles
 course = Course()
 # obstacles = course.default()
@@ -30,18 +27,22 @@ course = Course()
 # obstacles = course.emptyCourse()
 # obstacles = course.avoidCourse()
 # obstacles = course.avoidCourse2()
-obstacles = course.popcornCourse()
+obstacles = course.popcornCourse(5.5)
 
 ## Set up problem
 folder_names = os.listdir('data')
 folder_names.sort()
-print(folder_names)
 # Load up most recent Genetic Algorithm Run
 with open('./data/'+folder_names[-1]+'/algorithm_pickle', 'rb') as f:
     genetic_alg = pickle.load(f)
 drone, environment, stabiliser, preset = genetic_alg.decodeGenome(genetic_alg.readBestGenome())
 print(genetic_alg.universal_best_generation)
+
 environment.resetEnv(obstacles)
+preset.drone_dict["theta_intial"] = 0.0
+preset.drone_dict["z_initial"] = 30.0
+
+drone.resetParams(preset.drone_dict)
 
 # Initialise None lists in environment and drone
 environment.update(drone, False)
@@ -49,7 +50,7 @@ drone.recieveLaserDistances(environment.laser_distances)
 
 # Initialise Renderer and Plots
 #Render Window limits
-draw_scene = True
+draw_scene = False
 draw_graphs = False
 draw_final_graph = True
 
@@ -70,8 +71,14 @@ while not collision and total_t < 30.0:
     delta_z_dot, delta_x_dot = drone.findDeltaVelocities()
     print("delta_z_dot: ", delta_z_dot)
     print("delta_x_dot: ", delta_x_dot)
-
-    inputs_stabilise = [drone.vel[0][0]+delta_x_dot, drone.vel[1][0]+delta_z_dot, drone.theta_pos, drone.theta_vel] # inputs are laser lengths + state information
+    print(drone.theta_pos)
+    theta_raw = drone.theta_pos
+    if theta_raw < np.pi:
+        theta_input = theta_raw
+    else:
+        theta_input = theta_raw - 2*np.pi
+        
+    inputs_stabilise = [drone.vel[0][0]+delta_x_dot, drone.vel[1][0]+delta_z_dot, theta_input, drone.theta_vel] # inputs are laser lengths + state information
     # action = net.advance(inputs, preset.dt, preset.dt)
     action = stabiliser.activate(inputs_stabilise)
 

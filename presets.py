@@ -21,15 +21,15 @@ class Presets(object):
         self.lasers = 8
         self.laser_range = 2*np.pi # [rad]
         self.input_limit = 50 # [N]
-        self.input_rate_limit = 500 # [N/s]
+        self.input_rate_limit = 500000 # [N/s]
         self.dt = 0.01 #[s]
         self.max_laser_length = 10
-        self.safe_vel = 1 # [m/s] # Safe velocity to touchdown
+        self.safe_vel = 1.0 # [m/s] # Safe velocity to touchdown
         self.safe_angle = 25*np.pi/180 # [rad] # Safe angle from 0 to touchdown with
 
         # Starting position
         self.x_initial = -0. # [m]
-        self.z_initial = 25. # [m]
+        self.z_initial = 30. # [m]
         self.theta_intial = 0*np.pi/180 # [rad]
         self.createDroneDictionary()
 

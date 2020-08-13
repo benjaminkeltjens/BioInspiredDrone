@@ -72,22 +72,27 @@ total_t = 0
 def loadStabiliser(N):
     local_dir = os.path.dirname(__file__)
     folder_paths = ['first_stabiliser', 'second_stabiliser', 'third_aggressive_stabiliser', 'fourth_stabiliser', 'fifth_aggressive_stabiliser']
-    with open(folder_paths[N-1]+'/winner', 'rb') as f:
+    with open('winner', 'rb') as f:
         stabiliser = pickle.load(f)
-    config_path_stabilise = os.path.join(local_dir, folder_paths[N-1]+'/config-nn')
+    config_path_stabilise = os.path.join(local_dir, 'config-nn')
     config_stabilise = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
     neat.DefaultSpeciesSet, neat.DefaultStagnation,
     config_path_stabilise)
     return neat.nn.FeedForwardNetwork.create(stabiliser, config_stabilise)
 
 # net = neat.ctrnn.CTRNN.create(c, config, drone.dt)
-net = loadStabiliser(5)
+net = loadStabiliser(1)
 
 while not collision and total_t<20.0:
     # start = time.time()
+    theta_raw = drone.theta_pos
+    if theta_raw < np.pi:
+        theta_input = theta_raw
+    else:
+        theta_input = theta_raw - 2*np.pi
+    inputs = [drone.vel[0][0], drone.vel[1][0], theta_input, drone.theta_vel]
 
-
-    inputs =[drone.vel[0][0], drone.vel[1][0], drone.theta_pos, drone.theta_vel] # inputs are laser lengths + state information
+    # inputs =[drone.vel[0][0], drone.vel[1][0], drone.theta_pos, drone.theta_vel] # inputs are laser lengths + state information
     # action = net.advance(inputs, preset.dt, preset.dt)
     action = net.activate(inputs)
 

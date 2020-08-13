@@ -19,19 +19,16 @@ import neat
 
 # Generate obstacles
 course = Course()
-course_1 = course.avoidCourse()
-course_2 = course.avoidCourse2()
-course_3 = course.popcornCourse()
+course_1 = course.popcornCourse(1.5)
+course_2 = course.popcornCourse(2.5)
+course_3 = course.popcornCourse(5.5)
 courses = [course_1, course_2, course_3]
-
-seed = 7.
-random.seed(seed)
 
 # Algorithm Paramaters
 threshold = 0.
-generation_limit =  200
+generation_limit =  30
 population_size = 48 # Divisible by 4
-mutation_variance = 1.0
+mutation_variance = 1.25
 
-algorithm = GeneticAlgorithm(threshold, generation_limit, population_size, mutation_variance, courses, seed)
+algorithm = GeneticAlgorithm(threshold, generation_limit, population_size, mutation_variance, courses)
 algorithm.run()

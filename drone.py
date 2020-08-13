@@ -238,8 +238,8 @@ class AvoiderDrone(TrainingDrone):
         delta_z_dot_a = z_F*(self.max_vel+self.z_up)
         delta_x_dot = x_F*self.max_vel
 
-        delta_x_dot_d = self.findDownwardVelocity()
-        delta_z_dot = (delta_x_dot_d+delta_z_dot_a)/abs(delta_x_dot_d+delta_z_dot_a)*min(abs(delta_x_dot_d+delta_z_dot_a),self.max_vel)
+        delta_z_dot_d = self.findDownwardVelocity()
+        delta_z_dot = (delta_z_dot_d+delta_z_dot_a)/abs(delta_z_dot_d+delta_z_dot_a)*min(abs(delta_z_dot_d+delta_z_dot_a),self.max_vel)
         # delta_x_dot = (delta_x_dot+0.00000001)/abs(delta_x_dot+0.00000001) * min(abs(delta_x_dot),self.max_vel)
 
         return delta_z_dot, delta_x_dot

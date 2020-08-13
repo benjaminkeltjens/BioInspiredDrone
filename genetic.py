@@ -15,14 +15,13 @@ import neat
 
 class GeneticAlgorithm(object):
 
-    def __init__(self, threshold, generation_limit, N_pop, mutation_variance, obstacle_courses, seed):
+    def __init__(self, threshold, generation_limit, N_pop, mutation_variance, obstacle_courses):
 
         self.threshold = threshold
         self.generation_limit = generation_limit
         self.N_pop = N_pop
         self.parents_in_new_gen = 0.25
         self.mutation_variance = mutation_variance
-        self.seed = seed
 
         # Create Folder name for data storage
         date_time = str(datetime.datetime.now())[:-10]
@@ -96,7 +95,6 @@ class GeneticAlgorithm(object):
 
         # Stabiliser
         stabiliser = self.stabilisers[genome[10]-1]
-
         return drone, environment, stabiliser, preset_copy
 
     def crossover(self):
@@ -251,7 +249,14 @@ class GeneticAlgorithm(object):
 
                 delta_z_dot, delta_x_dot = drone.findDeltaVelocities()
                 # create list of inputs
-                inputs_stabilise = [drone.vel[0][0]+delta_x_dot, drone.vel[1][0]+delta_z_dot, drone.theta_pos, drone.theta_vel] # inputs are laser lengths + state information
+
+                theta_raw = drone.theta_pos
+                if theta_raw < np.pi:
+                    theta_input = theta_raw
+                else:
+                    theta_input = theta_raw - 2*np.pi
+
+                inputs_stabilise = [drone.vel[0][0]+delta_x_dot, drone.vel[1][0]+delta_z_dot, theta_input, drone.theta_vel] # inputs are laser lengths + state information
                 # action = net.advance(inputs, preset.dt, preset.dt)
                 action = stabiliser.activate(inputs_stabilise)
 

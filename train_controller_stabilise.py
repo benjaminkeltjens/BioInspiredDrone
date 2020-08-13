@@ -64,7 +64,7 @@ def trainController(controller):
     else:
         pe = neat.ParallelEvaluator(multiprocessing.cpu_count(), eval_CTRNN_genome)
 
-    winner = pop.run(pe.evaluate)
+    winner = pop.run(pe.evaluate, n=50)
     # global_run_count = 0
 
     with open('winner', 'wb') as f:
@@ -89,61 +89,51 @@ def eval_CTRNN_genome(genome, config):
     net = neat.ctrnn.CTRNN.create(genome, config, drone.dt)
     fitnesses = []
     global_run_count = 0
-
+    random.seed(2)
+    random.seed(1)
     for _ in range(global_runs_per_net):
+
         # Find current obstacle Course
-        if global_run_count%3 == 0:
-            environment.resetEnv(course_1)
-            preset.z_initial = 20.
-            preset.x_initial = -2.
-            preset.theta_intial = -10.*np.pi/180
-        elif global_run_count%3 == 1:
-            environment.resetEnv(course_1)
-            preset.z_initial = 28.
-            preset.x_initial = 1.
-            preset.theta_intial = 8.*np.pi/180
-        else:
-            environment.resetEnv(course_1)
-            preset.z_initial = 28.
-            preset.x_initial = 1.
-            preset.theta_intial = -16*np.pi/180
-
-
+        preset.theta_intial = (random.random()*2-1)*25.*np.pi/180
         preset.createDroneDictionary()
 
         # Reset all object parameters for new run
         drone.resetParams(preset.drone_dict)
-        environment.update(drone, False)
-        drone.recieveLaserDistances(environment.laser_distances)
+        drone.vel = np.array([[(random.random()*2-1)*3], [(random.random()*2-1)*3]]) # [m/s]
+        drone.theta_vel = (random.random()*2-1)*(np.pi/2)
+
+
+
 
         collision = False
         total_t = 0
         temp_fitness = 0
         while not collision:
             # create list of inputs
-            inputs = [drone.vel[0][0], drone.vel[1][0], drone.theta_pos, drone.theta_vel] # inputs are laser lengths + state information
+            theta_raw = drone.theta_pos
+            if theta_raw < np.pi:
+                theta_input = theta_raw
+            else:
+                theta_input = theta_raw - 2*np.pi
+            inputs = [drone.vel[0][0], drone.vel[1][0], theta_input, drone.theta_vel] # inputs are laser lengths + state information
             action = net.advance(inputs, preset.dt, preset.dt)
 
-            drone.update(action[0]*drone.input_limit, action[1]*drone.input_limit)
+            drone.updateStabilise(action[0]*drone.input_limit, action[1]*drone.input_limit)
 
             # Here check if at the end of simulation (Not done in while statement to calculate the fitness correctly)
-            if total_t < global_simulation_seconds and drone.pos[1][0] < 40. and abs(drone.pos[0][0]) < 10. :
-                environment.update(drone, False)
-            else:
-                environment.update(drone, True)
-                environment.fitness -= 10000
+            bound = 2.5
+            if not (total_t < global_simulation_seconds and drone.pos[1][0] < 40. and drone.pos[1][0] > 0. and abs(drone.pos[0][0]) < bound):
+                if abs(drone.pos[0][0]) >= bound:
+                    temp_fitness -= 100
                 break
 
             temp_fitness -= abs(drone.vel[1][0])
-            temp_fitness -= abs(drone.vel[0][0])*0.5
+            temp_fitness -= abs(drone.vel[0][0])
             temp_fitness -= min(drone.theta_pos, abs(2*np.pi - drone.theta_pos))/(np.pi/9)
-            temp_fitness -= abs(drone.theta_vel)/(2*np.pi/9)
+            # temp_fitness -= abs(drone.theta_vel)/(2*np.pi/9)
             # temp_fitness -= (drone.input_L+drone.input_R)/50
 
-            drone.recieveLaserDistances(environment.laser_distances)
-
             total_t += preset.dt
-            collision = environment.collision or environment.touchdown
         global_run_count += 1
         fitnesses.append(temp_fitness/total_t)
 
@@ -174,14 +164,21 @@ def eval_NN_genome(genome, config):
         temp_fitness = 0
         while not collision:
             # create list of inputs
-            inputs = [drone.vel[0][0], drone.vel[1][0], drone.theta_pos, drone.theta_vel] # inputs are laser lengths + state information
+            theta_raw = drone.theta_pos
+            if theta_raw < np.pi:
+                theta_input = theta_raw
+            else:
+                theta_input = theta_raw - 2*np.pi
+            inputs = [drone.vel[0][0], drone.vel[1][0], theta_input, drone.theta_vel] # inputs are laser lengths + state information
+            # inputs = [drone.vel[0][0], drone.vel[1][0], drone.theta_pos, drone.theta_vel] # inputs are laser lengths + state information
             action = net.activate(inputs)
 
             drone.updateStabilise(action[0]*drone.input_limit, action[1]*drone.input_limit)
 
             # Here check if at the end of simulation (Not done in while statement to calculate the fitness correctly)
-            if not (total_t < global_simulation_seconds and drone.pos[1][0] < 40. and drone.pos[1][0] > 0. and abs(drone.pos[0][0]) < 2.5):
-                if abs(drone.pos[0][0]) >= 2.5:
+            bound = 2.5
+            if not (total_t < global_simulation_seconds and drone.pos[1][0] < 40. and drone.pos[1][0] > 0. and abs(drone.pos[0][0]) < bound):
+                if abs(drone.pos[0][0]) >= bound:
                     temp_fitness -= 100
                 break
 

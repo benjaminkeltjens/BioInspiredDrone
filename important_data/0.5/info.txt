@@ -1,0 +1,5 @@
+Run with 0.5 std deviation
+3 random courses (1.5,2.5,5.5)	
+Starting theta = 0
+generations = 30
+pop = 48

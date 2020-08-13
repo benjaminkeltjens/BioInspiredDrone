@@ -309,16 +309,16 @@ class Course(object):
                 self.obstacles.append(Obstacle(x,z,r))
         return self.obstacles
 
-    def popcornCourse(self):
+    def popcornCourse(self,seed):
         self.obstacles = []
-        random.seed(3.5)
+        random.seed(seed)
         obstacle_locations = []
         n_obstacles = 20
         min_distance = 3
         while len(self.obstacles) < n_obstacles:
             fail_flag = False
             temp_x = random.uniform(-9.5,9.5)
-            temp_y = random.uniform(1.0,20.0)
+            temp_y = random.uniform(5.0,24.0)
 
             for i in range(len(obstacle_locations)):
                 distance = np.sqrt((obstacle_locations[i][0]-temp_x)**2+(obstacle_locations[i][1]-temp_y)**2)
