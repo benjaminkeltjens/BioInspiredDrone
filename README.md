@@ -15,11 +15,14 @@ Python 3.6
 This code is comprised of various sections.
 
 drone.py holds the drone classes need for simulating dynamics, lasers, and describing controllers
+
 environment.py:
   - Environment class to simulate interaction of drone with obstacles and bounds in the Environment
   - Obstacle class
   - Course class for generating obstacles for the environment
+
 presets.py loads the preset parameters for the drone and environment classes
+
 render.py has all classes needed for visualising simulations, data stream and data analysis
 
 # Stabiliser Controller Evolution:
