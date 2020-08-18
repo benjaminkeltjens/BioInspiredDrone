@@ -1,5 +1,5 @@
 """
-This file is to handle preset data combinations for simulations
+This file is to handle preset data for loading drone and environment objects
 
 Benjamin Keltjens
 July 2020
@@ -13,6 +13,7 @@ class Presets(object):
         pass
 
     def loadDefault(self):
+        # Load the default values
         self.gravity = -9.80665 # [m/s^2]
         self.drag_coeff = 0.5
         self.mass = 5 # [kg]
@@ -31,7 +32,7 @@ class Presets(object):
         self.x_initial = -0. # [m]
         self.z_initial = 30. # [m]
         self.theta_intial = 0*np.pi/180 # [rad]
-        self.createDroneDictionary()
+        self.createDroneDictionary() # Load dictionary
 
     def createDroneDictionary(self):
         # Create dictionary to hold all the relavent data for the drone parent class, to pass easily into child classes
@@ -51,15 +52,9 @@ class Presets(object):
         "dt":self.dt
          }
 
-    def writeCTRNNConfigFile(self):
-        fin = open("config-ctrnn-template")
-        fout = open("config-ctrnn", "wt")
-        for line in fin:
-            fout.write(line.replace("num_inputs              = 8", "num_inputs              = "+str(4)))
-        fin.close()
-        fout.close()
-
     def writeNNConfigFile(self):
+        # Write custom config file for Neural Network
+
         fin = open("config-nn-template")
         fout = open("config-nn", "wt")
         for line in fin:

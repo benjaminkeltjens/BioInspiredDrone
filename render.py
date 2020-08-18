@@ -1,11 +1,13 @@
 """
-This file is the renderer class using shapely and matplotlib
+This file is the renderer class for simulation, data stream plotter, and plot genetic algorithm analysis
 
 Benjamin Keltjens
 July 2020
 """
 from shapely.geometry import Polygon, Point
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib as mpl
 import numpy as np
 import os
 import pickle
@@ -14,7 +16,7 @@ from genetic import GeneticAlgorithm
 
 class Renderer(object):
 
-    def __init__(self, obstacles, drone, xlims, ylims):
+    def __init__(self, obstacles, drone, xlims, ylims, live):
         # Initialise the graph
 
         plt.ion()
@@ -26,11 +28,24 @@ class Renderer(object):
         plt.ylim(ylims[0], ylims[1])
         plt.gca().set_aspect('equal', adjustable='box')
         self.obstacle_lines = self.createObstacles(obstacles)
-        self.laser_lines = self.initialiseLasers(drone)
-        self.drone_line = self.initialiseDrone(drone)
+        if live:
+            self.laser_lines = self.initialiseLasers(drone)
+            self.drone_line = self.initialiseDrone(drone)
         self.ground_line, = self.ax.plot([xlims[0], xlims[1]], [0, 0], 'g-')
         self.left_line, = self.ax.plot([10, 10], [0, 50], 'k-')
         self.right_line, = self.ax.plot([-10, -10], [0, 50], 'k-')
+        self.drone_x = [drone.pos[0][0]]
+        self.drone_y = [drone.pos[1][0]]
+        self.drone_t = [1]
+        self.drone_v = [drone.total_vel]
+
+    def updateHistory(self,drone):
+        self.drone_x.append(drone.pos[0][0])
+        self.drone_y.append(drone.pos[1][0])
+        self.drone_t.append(self.drone_t[-1]+1)
+        self.drone_v.append(drone.total_vel)
+        # self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def updateGraph(self, drone):
         # Update Drone
@@ -39,6 +54,22 @@ class Renderer(object):
         self.updateLasers(drone)
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
+
+    def drawLine(self):
+        x_coords = []
+        y_coords = []
+        t_coords = []
+        v_coords = []
+        for i in range(len(self.drone_t)):
+            if (i-1)%30 == 0:
+                x_coords.append(self.drone_x[i])
+                y_coords.append(self.drone_y[i])
+                t_coords.append(self.drone_t[i])
+                v_coords.append(self.drone_v[i])
+        self.ax.scatter(x_coords, y_coords, c = v_coords, cmap = 'Reds')
+        # PCM = self.ax.get_children()[2]
+        self.cbar = self.fig.colorbar(cm.ScalarMappable(norm = mpl.colors.Normalize(vmin = min(v_coords), vmax = max(v_coords)), cmap = 'Reds'), ax=self.ax)
+        self.cbar.set_label('Velocity [m/s]')
 
     def createObstacles(self, obstacles):
         # Generate all the obstacle lines and save to list for debugging
@@ -101,6 +132,7 @@ class DataStream(object):
         if live:
             plt.ion()
         self.fig = plt.figure()
+        plt.rcParams.update({'font.size': 10})
 
         self.ax_pos_z = self.fig.add_subplot(self.graphs,1,1)
         self.ax_pos_z.set_ylim(0, 40)
@@ -108,14 +140,14 @@ class DataStream(object):
 
         self.ax_pos_theta = self.fig.add_subplot(self.graphs,1,2)
         self.ax_pos_theta.set_ylim(-np.pi/3, np.pi/3)
-        self.ax_pos_theta.set_ylabel("$\theta$ Position [rad]")
+        self.ax_pos_theta.set_ylabel(r'$\theta$ Position [rad]')
 
         self.ax_vel = self.fig.add_subplot(self.graphs,1,3)
-        self.ax_vel.set_ylim(-30, 10)
+        self.ax_vel.set_ylim(-4, 2)
         self.ax_vel.set_ylabel("Velocity [m/s]")
 
         self.ax_vel_theta = self.fig.add_subplot(self.graphs,1,4)
-        self.ax_vel_theta.set_ylim(-5, 5)
+        self.ax_vel_theta.set_ylim(-4.0, 4.0)
         self.ax_vel_theta.set_ylabel("Angular Velocity [rad/s]")
 
         self.ax_thrust = self.fig.add_subplot(self.graphs,1,5)
@@ -126,7 +158,7 @@ class DataStream(object):
         self.pos_z_line, = self.ax_pos_z.plot([], [], 'b-', label='z position')
         self.ax_pos_z.legend()
 
-        self.pos_theta_line, = self.ax_pos_theta.plot([], [], 'b-', label='theta position')
+        self.pos_theta_line, = self.ax_pos_theta.plot([], [], 'b-', label=r'$\theta$ position')
         self.ax_pos_theta.legend()
 
         self.vel_x_line, = self.ax_vel.plot([], [], 'r-', label='x velocity')
@@ -305,16 +337,31 @@ class GeneticPlot(object):
         for i in self.sorted_generation_keys:
             fitnesses = self.fitness_data[i]
             max_fitnesses.append(np.max(fitnesses))
-        lab = 'Mutation = ' + str(self.genetic_alg.mutation_variance)
-        figure.plot(self.sorted_generation_keys, max_fitnesses, label=lab)
+        sigma= self.genetic_alg.mutation_variance
+        print('mutation: '+str(self.genetic_alg.mutation_variance) + ': ' +str(max_fitnesses[-1]))
+        lab = 'Mutation = ' + str(sigma)
+        if sigma > 0.875:
+            red = 1.0
+            blue = 0.0
+        else:
+            red = 0.0
+            blue =1.0
+        figure.plot(self.sorted_generation_keys, max_fitnesses, label=lab, color=(red,0.0,blue,1.439*np.abs(sigma-0.875)+0.1))
 
     def addStdDev(self,figure):
         std_devs = []
         for i in self.sorted_generation_keys:
             fitnesses = self.fitness_data[i]
             std_devs.append(np.std(fitnesses))
-        lab = 'Mutation = ' + str(self.genetic_alg.mutation_variance)
-        figure.plot(self.sorted_generation_keys, std_devs, label=lab)
+        sigma= self.genetic_alg.mutation_variance
+        lab = 'Mutation = ' + str(sigma)
+        if sigma > 0.875:
+            red = 1.0
+            blue = 0.0
+        else:
+            red = 0.0
+            blue =1.0
+        figure.plot(self.sorted_generation_keys, std_devs, label=lab, color=(red,0.0,blue,1.439*np.abs(sigma-0.875)+0.1)) #2.3*(sigma-0.875)**2+.1
 
     def plotParetoFront(self):
         # For every genome plot the energy and height
@@ -333,10 +380,11 @@ class GeneticPlot(object):
         self.pareto_fig = plt.figure()
         self.pareto_ax = self.pareto_fig.add_subplot(1,1,1)
         self.pareto_ax.set_ylabel("Final Height [m]")
-        self.pareto_ax.set_xlabel("Normalised Energy [J]")
+        self.pareto_ax.set_xlabel("Normalised Energy [-]")
         cm = plt.cm.get_cmap('RdYlBu')
         self.pareto_line = self.pareto_ax.scatter(energys, heights, c=n_laser, cmap =cm)
-        plt.colorbar(self.pareto_line)
+        cbar = plt.colorbar(self.pareto_line)
+        cbar.set_label('Number of Lasers')
         plt.show()
 
     def plotCharacteristic(self,idx):

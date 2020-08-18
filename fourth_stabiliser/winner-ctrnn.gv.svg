@@ -5,81 +5,81 @@
  -->
 <!-- Title: %3 Pages: 1 -->
 <svg width="185pt" height="92pt"
- viewBox="0.00 0.00 185.00 91.70" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ viewBox="0.00 0.00 184.50 91.70" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 87.6985)">
 <title>%3</title>
-<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-87.6985 181,-87.6985 181,4 -4,4"/>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-87.6985 180.5,-87.6985 180.5,4 -4,4"/>
 <!-- dx -->
 <g id="node1" class="node">
 <title>dx</title>
-<polygon fill="#d3d3d3" stroke="#000000" points="133.5,-83.6985 107.5,-83.6985 107.5,-65.6985 133.5,-65.6985 133.5,-83.6985"/>
-<text text-anchor="middle" x="120.5" y="-72.4985" font-family="Times,serif" font-size="9.00" fill="#000000">dx</text>
-</g>
-<!-- 0 -->
-<g id="node5" class="node">
-<title>0</title>
-<ellipse fill="#add8e6" stroke="#000000" cx="93.5" cy="-14.8492" rx="14.7" ry="14.7"/>
-<text text-anchor="middle" x="93.5" y="-12.6492" font-family="Times,serif" font-size="9.00" fill="#000000">0</text>
-</g>
-<!-- dx&#45;&gt;0 -->
-<g id="edge5" class="edge">
-<title>dx&#45;&gt;0</title>
-<path fill="none" stroke="#ff0000" stroke-width=".4939" d="M116.3993,-65.6087C113.08,-58.2511 108.2558,-47.5575 103.8903,-37.8809"/>
-<polygon fill="#ff0000" stroke="#ff0000" stroke-width=".4939" points="107.0532,-36.3805 99.7505,-28.7044 100.6724,-39.2591 107.0532,-36.3805"/>
+<polygon fill="#d3d3d3" stroke="#000000" points="26,-83.6985 0,-83.6985 0,-65.6985 26,-65.6985 26,-83.6985"/>
+<text text-anchor="middle" x="13" y="-72.4985" font-family="Times,serif" font-size="9.00" fill="#000000">dx</text>
 </g>
 <!-- 1 -->
 <g id="node6" class="node">
 <title>1</title>
-<ellipse fill="#add8e6" stroke="#000000" cx="142.5" cy="-14.8492" rx="14.7" ry="14.7"/>
-<text text-anchor="middle" x="142.5" y="-12.6492" font-family="Times,serif" font-size="9.00" fill="#000000">1</text>
+<ellipse fill="#add8e6" stroke="#000000" cx="87" cy="-14.8492" rx="14.7" ry="14.7"/>
+<text text-anchor="middle" x="87" y="-12.6492" font-family="Times,serif" font-size="9.00" fill="#000000">1</text>
 </g>
 <!-- dx&#45;&gt;1 -->
-<g id="edge6" class="edge">
+<g id="edge5" class="edge">
 <title>dx&#45;&gt;1</title>
-<path fill="none" stroke="#00ff00" stroke-width=".1354" d="M123.8413,-65.6087C126.4821,-58.4248 130.2918,-48.0606 133.7812,-38.5679"/>
-<polygon fill="#00ff00" stroke="#00ff00" stroke-width=".1354" points="137.074,-39.7544 137.2392,-29.1609 130.5039,-37.3392 137.074,-39.7544"/>
+<path fill="none" stroke="#00ff00" stroke-width=".7035" d="M24.239,-65.6087C35.6232,-56.4014 53.4666,-41.9702 67.2222,-30.845"/>
+<polygon fill="#00ff00" stroke="#00ff00" stroke-width=".7035" points="69.5901,-33.4314 75.1645,-24.4215 65.1882,-27.9886 69.5901,-33.4314"/>
 </g>
 <!-- dz -->
 <g id="node2" class="node">
 <title>dz</title>
-<polygon fill="#d3d3d3" stroke="#000000" points="177,-83.6985 152,-83.6985 152,-65.6985 177,-65.6985 177,-83.6985"/>
-<text text-anchor="middle" x="164.5" y="-72.4985" font-family="Times,serif" font-size="9.00" fill="#000000">dz</text>
+<polygon fill="#d3d3d3" stroke="#000000" points="125.5,-83.6985 100.5,-83.6985 100.5,-65.6985 125.5,-65.6985 125.5,-83.6985"/>
+<text text-anchor="middle" x="113" y="-72.4985" font-family="Times,serif" font-size="9.00" fill="#000000">dz</text>
+</g>
+<!-- 0 -->
+<g id="node5" class="node">
+<title>0</title>
+<ellipse fill="#add8e6" stroke="#000000" cx="136" cy="-14.8492" rx="14.7" ry="14.7"/>
+<text text-anchor="middle" x="136" y="-12.6492" font-family="Times,serif" font-size="9.00" fill="#000000">0</text>
 </g>
 <!-- dz&#45;&gt;0 -->
-<g id="edge2" class="edge">
+<g id="edge4" class="edge">
 <title>dz&#45;&gt;0</title>
-<path fill="none" stroke="#ff0000" stroke-width=".3072" d="M153.7166,-65.6087C142.897,-56.4883 125.9964,-42.242 112.8506,-31.1607"/>
-<polygon fill="#ff0000" stroke="#ff0000" stroke-width=".3072" points="114.7575,-28.1906 104.8557,-24.4215 110.2459,-33.5427 114.7575,-28.1906"/>
+<path fill="none" stroke="#ff0000" stroke-width="1.0922" d="M116.4932,-65.6087C119.254,-58.4248 123.2369,-48.0606 126.8849,-38.5679"/>
+<polygon fill="#ff0000" stroke="#ff0000" stroke-width="1.0922" points="130.1798,-39.7509 130.5001,-29.1609 123.6457,-37.2398 130.1798,-39.7509"/>
 </g>
 <!-- dz&#45;&gt;1 -->
-<g id="edge3" class="edge">
+<g id="edge6" class="edge">
 <title>dz&#45;&gt;1</title>
-<path fill="none" stroke="#ff0000" stroke-width=".36" d="M161.1587,-65.6087C158.5179,-58.4248 154.7082,-48.0606 151.2188,-38.5679"/>
-<polygon fill="#ff0000" stroke="#ff0000" stroke-width=".36" points="154.4961,-37.3392 147.7608,-29.1609 147.926,-39.7544 154.4961,-37.3392"/>
+<path fill="none" stroke="#ff0000" stroke-width=".4786" d="M109.0512,-65.6087C105.8548,-58.2511 101.2093,-47.5575 97.0055,-37.8809"/>
+<polygon fill="#ff0000" stroke="#ff0000" stroke-width=".4786" points="100.2138,-36.4817 93.019,-28.7044 93.7934,-39.2709 100.2138,-36.4817"/>
 </g>
 <!-- theta -->
 <g id="node3" class="node">
 <title>theta</title>
-<polygon fill="#d3d3d3" stroke="#000000" points="33,-83.6985 0,-83.6985 0,-65.6985 33,-65.6985 33,-83.6985"/>
-<text text-anchor="middle" x="16.5" y="-72.4985" font-family="Times,serif" font-size="9.00" fill="#000000">theta</text>
+<polygon fill="#d3d3d3" stroke="#000000" points="176.5,-83.6985 143.5,-83.6985 143.5,-65.6985 176.5,-65.6985 176.5,-83.6985"/>
+<text text-anchor="middle" x="160" y="-72.4985" font-family="Times,serif" font-size="9.00" fill="#000000">theta</text>
 </g>
 <!-- theta&#45;&gt;0 -->
-<g id="edge4" class="edge">
+<g id="edge2" class="edge">
 <title>theta&#45;&gt;0</title>
-<path fill="none" stroke="#ff0000" stroke-width=".4008" d="M28.1946,-65.6087C40.1797,-56.2931 59.0449,-41.6299 73.4238,-30.4537"/>
-<polygon fill="#ff0000" stroke="#ff0000" stroke-width=".4008" points="75.9477,-32.9249 81.6953,-24.0246 71.6519,-27.3981 75.9477,-32.9249"/>
+<path fill="none" stroke="#ff0000" stroke-width=".3591" stroke-dasharray="1,5" d="M156.3549,-65.6087C153.4352,-58.3277 149.2054,-47.7799 145.3572,-38.1836"/>
+<polygon fill="#ff0000" stroke="#ff0000" stroke-width=".3591" points="148.5266,-36.6832 141.556,-28.7044 142.0295,-39.2887 148.5266,-36.6832"/>
+</g>
+<!-- theta&#45;&gt;1 -->
+<g id="edge1" class="edge">
+<title>theta&#45;&gt;1</title>
+<path fill="none" stroke="#00ff00" stroke-width="2.1416" d="M148.9129,-65.6087C137.6825,-56.4014 120.0803,-41.9702 106.5105,-30.845"/>
+<polygon fill="#00ff00" stroke="#00ff00" stroke-width="2.1416" points="108.6279,-28.055 98.6756,-24.4215 104.1898,-33.4683 108.6279,-28.055"/>
 </g>
 <!-- dtheta -->
 <g id="node4" class="node">
 <title>dtheta</title>
-<polygon fill="#d3d3d3" stroke="#000000" points="89.5,-83.6985 51.5,-83.6985 51.5,-65.6985 89.5,-65.6985 89.5,-83.6985"/>
-<text text-anchor="middle" x="70.5" y="-72.4985" font-family="Times,serif" font-size="9.00" fill="#000000">dtheta</text>
+<polygon fill="#d3d3d3" stroke="#000000" points="82,-83.6985 44,-83.6985 44,-65.6985 82,-65.6985 82,-83.6985"/>
+<text text-anchor="middle" x="63" y="-72.4985" font-family="Times,serif" font-size="9.00" fill="#000000">dtheta</text>
 </g>
-<!-- dtheta&#45;&gt;0 -->
-<g id="edge1" class="edge">
-<title>dtheta&#45;&gt;0</title>
-<path fill="none" stroke="#ff0000" stroke-width=".8576" d="M73.9932,-65.6087C76.754,-58.4248 80.7369,-48.0606 84.3849,-38.5679"/>
-<polygon fill="#ff0000" stroke="#ff0000" stroke-width=".8576" points="87.6798,-39.7509 88.0001,-29.1609 81.1457,-37.2398 87.6798,-39.7509"/>
+<!-- dtheta&#45;&gt;1 -->
+<g id="edge3" class="edge">
+<title>dtheta&#45;&gt;1</title>
+<path fill="none" stroke="#00ff00" stroke-width=".3253" d="M66.6451,-65.6087C69.5648,-58.3277 73.7946,-47.7799 77.6428,-38.1836"/>
+<polygon fill="#00ff00" stroke="#00ff00" stroke-width=".3253" points="80.9705,-39.2887 81.444,-28.7044 74.4734,-36.6832 80.9705,-39.2887"/>
 </g>
 </g>
 </svg>

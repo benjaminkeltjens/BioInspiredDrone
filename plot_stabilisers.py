@@ -18,28 +18,15 @@ from presets import Presets
 
 import neat
 
-## Set up problem
-
-# Drone charactertics
-# gravity = -9.80665 # [m/s^2]
-# mass = 5 # [kg]
-# length = 0.3 # [m]
-# height = 0.05 # [m]
-# lasers = 10
-# laser_range = 2*np.pi # [rad]
-# input_limit = 50 # [N]
-# dt = 0.01 #[s]
-# max_laser_length = 10
-#
-# # Starting position
-# x_initial = -0.8 # [m]
-# z_initial = 10. # [m]
+# Load Presets
 preset = Presets()
 preset.loadDefault()
 
 def loadStabiliser(N):
+    # Load stabiliser network
+
     local_dir = os.path.dirname(__file__)
-    folder_paths = ['first_stabiliser', 'second_stabiliser', 'third_aggressive_stabiliser', 'fourth_stabiliser', 'fifth_aggressive_stabiliser']
+    folder_paths = ['first_stabiliser', 'second_stabiliser', 'third_stabiliser', 'fourth_stabiliser', 'fifth_stabiliser']
     with open(folder_paths[N-1]+'/winner', 'rb') as f:
         stabiliser = pickle.load(f)
         config_path_stabilise = os.path.join(local_dir, folder_paths[N-1]+'/config-nn')
@@ -49,8 +36,10 @@ def loadStabiliser(N):
         return neat.nn.FeedForwardNetwork.create(stabiliser, config_stabilise)
 
 def loadStabiliserInfo(N):
+    # Load Stabiliser network information
+
     local_dir = os.path.dirname(__file__)
-    folder_paths = ['first_stabiliser', 'second_stabiliser', 'third_aggressive_stabiliser', 'fourth_stabiliser', 'fifth_aggressive_stabiliser']
+    folder_paths = ['first_stabiliser', 'second_stabiliser', 'third_stabiliser', 'fourth_stabiliser', 'fifth_stabiliser']
     with open(folder_paths[N-1]+'/winner', 'rb') as f:
         stabiliser = pickle.load(f)
         config_path_stabilise = os.path.join(local_dir, folder_paths[N-1]+'/config-nn')
@@ -60,9 +49,11 @@ def loadStabiliserInfo(N):
         return stabiliser
 
 def check_tolerance(vel, angular_vel, angle):
+    # Check if drone in end state
+
     angle_tolerance = 5*np.pi/180
     vel_tolerance = 0.5
-    angular_vel_tolerance = np.pi/3
+    angular_vel_tolerance = np.pi
 
     angle_flag = min(drone.theta_pos, abs(2*np.pi - drone.theta_pos)) <= angle_tolerance
     vel_flag = np.linalg.norm(vel) < vel_tolerance
@@ -86,8 +77,7 @@ def run_sim(drone, environment, net):
             theta_input = np.pi - theta_raw
         inputs = [drone.vel[0][0], drone.vel[1][0], theta_input, drone.theta_vel]
 
-        # inputs =[drone.vel[0][0], drone.vel[1][0], drone.theta_pos, drone.theta_vel] # inputs are laser lengths + state information
-        # action = net.advance(inputs, preset.dt, preset.dt)
+
         action = net.activate(inputs)
 
         drone.update(action[0]*drone.input_limit, action[1]*drone.input_limit)
@@ -117,16 +107,17 @@ avg_times = []
 avg_x_lats = []
 avg_z_lats = []
 
-
+# Print controller information
 print("PRINTING CONTROLLERS")
 for i in range(5):
     print("Controller: " + str(i+1))
     print(loadStabiliserInfo(i+1))
 
+# For each stabiliser  find the performance over 100 runs 
 for i in range(5):
     net = loadStabiliser(i+1)
     random.seed(2)
-    random.seed(3)
+    random.seed(4)
     times = []
     x_lat = []
     z_lat = []
@@ -139,7 +130,7 @@ for i in range(5):
 
         # Reset all object parameters for new run
         drone.resetParams(preset.drone_dict)
-        drone.vel = np.array([[(random.random()*2-1)*3], [(random.random()*2-1)*3]]) # [m/s]
+        # drone.vel = np.array([[(random.random()*2-1)*3], [(random.random()*2-1)*3]]) # [m/s]
         drone.theta_vel = (random.random()*2-1)*(np.pi/2)
         # Load and set presets
 
@@ -164,12 +155,14 @@ for i in range(5):
     avg_z_lats.append(avg_z_lat)
 
 fig = plt.figure()
+plt.rcParams.update({'font.size': 15})
 ax_time = fig.add_subplot(3,1,1)
 ax_time.set_ylabel("Avg Settle Time [s]")
 ax_x_lat = fig.add_subplot(3,1,2)
 ax_x_lat.set_ylabel("Avg x displacement [m]")
 ax_z_lat = fig.add_subplot(3,1,3)
 ax_z_lat.set_ylabel("Avg z displacement [m]")
+ax_z_lat.set_xlabel("Controller [-]")
 ax_time.bar(list(range(1,6)),avg_times)
 ax_x_lat.bar(list(range(1,6)),avg_x_lats)
 ax_z_lat.bar(list(range(1,6)),avg_z_lats)

@@ -1,5 +1,5 @@
 """
-This file describes the parent drone class, and child drone classes with different control systems
+This file describes the environment, obstacle and course classes
 
 Benjamin Keltjens
 July 2020
@@ -13,26 +13,30 @@ import random
 class Environment(object):
 
     def __init__(self, lasers, obstacles, max_laser_length, safe_vel, safe_angle):
+        # Initialise environment objects
+
         self.obstacles = obstacles # List of obstacles objects, unordered
         self.obstacle_distances = [None]*len(obstacles) # List of obstacle distances in same order as obstacles
         self.ordered_obstacles = [None]*len(obstacles) # Ordered indexes of self.obstacles based on distance to Drone
-        self.lasers = lasers
-        self.laser_angles = [None]*lasers
-        self.laser_distances = [None]*lasers
+        self.lasers = lasers # Number of lasers
+        self.laser_angles = [None]*lasers # List Laser angles
+        self.laser_distances = [None]*lasers # Distance of each laser
         self.max_laser_length = max_laser_length
-        self.safe_vel = safe_vel
-        self.safe_angle = safe_angle
-        self.collision = False
-        self.touchdown = False
-        self.safe_touchdown = False
-        self.fitness = 0
-        self.energy = 0
-        self.x_wall = 10
+        self.safe_vel = safe_vel # Safe Landing Velocity
+        self.safe_angle = safe_angle # Safe angular position for landing
+        self.collision = False # Collision Flag
+        self.touchdown = False # Touchdown Flag
+        self.safe_touchdown = False # Safe touchdown flag
+        self.fitness = 0 # Total fitness for run
+        self.energy = 0 # Total energy for run
+        self.x_wall = 10 # Location of the walls in the x direction
 
     def resetEnv(self, obstacles):
+        # Reset environment values
+
         self.obstacles = obstacles
-        self.obstacle_distances = [None]*len(self.obstacles) # List of obstacle distances in same order as obstacles
-        self.ordered_obstacles = [None]*len(self.obstacles) # Ordered indexes of self.obstacles based on distance to Drone
+        self.obstacle_distances = [None]*len(self.obstacles)
+        self.ordered_obstacles = [None]*len(self.obstacles)
         self.laser_angles = [None]*self.lasers
         self.laser_distances = [None]*self.lasers
         self.collision = False
@@ -42,13 +46,15 @@ class Environment(object):
         self.energy = 0
 
     def update(self, drone, end):
-        self.laser_angles = drone.laser_list
-        self.orderObstacles(drone.pos)
-        self.findLaserDistances(drone.pos)
-        self.collision = self.findCollision(drone)
-        self.touchdown = self.checkTouchdown(drone)
-        self.safe_touchdown = self.checkSafeTouchdown(drone)
-        self.updateControllerFitness(drone,end)
+        # Update the state of the environment
+
+        self.laser_angles = drone.laser_list # Get laser list from drone object
+        self.orderObstacles(drone.pos) # Order the obstacles based on distance
+        self.findLaserDistances(drone.pos) # Find the distance of each laser sensor
+        self.collision = self.findCollision(drone) # Check for collisions
+        self.touchdown = self.checkTouchdown(drone) # Check for touchdown
+        self.safe_touchdown = self.checkSafeTouchdown(drone) # Check for safe touchdwon
+        self.updateControllerFitness(drone,end) # Update the total fitness and energy value
 
     def orderObstacles(self, pos_drone):
         # Update and order the distancece of the obstacles
@@ -59,6 +65,8 @@ class Environment(object):
         self.ordered_obstacles = list(np.argsort(self.obstacle_distances)) # Find the sorted of the distances, and reverse
 
     def findLaserDistances(self, pos_drone):
+        # Find the distance of all laser
+
         right_wall_flag = False
         for i in range(len(self.laser_angles)):
             # For each laser
@@ -160,11 +168,15 @@ class Environment(object):
         return False
 
     def checkTouchdown(self, drone):
+        # Check if drone is on the floor
+
         if drone.pos[1][0]-(drone.height/2) < 0:
             return True
         return False
 
     def checkSafeTouchdown(self, drone):
+        # Check if drone is on the floor and the safe landing conditions are satisfied
+
         vel_cond = drone.total_vel <= self.safe_vel # Lower than landing velocity (norm velocity)
         angle_cond = drone.theta_pos <= self.safe_angle or 2*np.pi-drone.theta_pos <= self.safe_angle # Lower than landing angle
         if (drone.pos[1][0]-(drone.height/2) < 0) and vel_cond and angle_cond:
@@ -196,9 +208,10 @@ class Environment(object):
 class Obstacle(object):
 
     def __init__(self,xposition,zposition,radius):
-        self.pos = np.array([[xposition],[zposition]])
-        self.radius = radius
-        self.shape = Point(xposition,zposition).buffer(radius)
+        # Intialise Obstacle object
+        self.pos = np.array([[xposition],[zposition]]) # Obstacle Location
+        self.radius = radius # Obstacle Radius
+        self.shape = Point(xposition,zposition).buffer(radius) # Generate shapely obstacle shape
         self.xcoords, self.zcoords = self.shape.exterior.xy # create the x and y coords for plotting
 
     def findDistance(self, pos_drone):
@@ -208,9 +221,11 @@ class Obstacle(object):
 class Course(object):
 
     def __init__(self):
+        # Initialise Course object
         self.obstacles = []
 
     def default(self):
+        # Default course of alternating obstacles
         self.obstacles = []
         total_obstacles = 4
         for i in range(total_obstacles):
@@ -222,6 +237,7 @@ class Course(object):
         return self.obstacles
 
     def moreComplicated(self):
+        # More complicated version of default course
         self.obstacles = []
         r1 = random.uniform(-1,1)
         r2 = random.uniform(-1,1)
@@ -249,12 +265,15 @@ class Course(object):
         return self.obstacles
 
     def emptyCourse(self):
+        # Empty course used for stabilising controller check
         self.obstacles = []
         self.obstacles.append(Obstacle(40,40,0.5))
 
         return self.obstacles
 
     def avoidCourse(self):
+        # Course with platforms
+
         self.obstacles = []
 
         total_obstacles = 8
@@ -281,6 +300,8 @@ class Course(object):
         return self.obstacles
 
     def avoidCourse2(self):
+        # Course with multiple gaps
+
         self.obstacles = []
 
         total_obstacles =2
@@ -310,6 +331,8 @@ class Course(object):
         return self.obstacles
 
     def popcornCourse(self,seed):
+        # Generate random course with input seed
+
         self.obstacles = []
         random.seed(seed)
         obstacle_locations = []
