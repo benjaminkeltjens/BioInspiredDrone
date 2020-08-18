@@ -10,6 +10,7 @@ Python 3.6
 - os
 - multiprocessing
 - random
+- graphviz
 
 # This is the deliverable code for the Bio-Inspired Course
 This code is comprised of various sections.
