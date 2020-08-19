@@ -50,7 +50,7 @@ for i in range(len(parameter_limits)):
 
 best_genomes = []
 for name in folder_names:
-    genome = list(np.loadtxt('/home/benjamin/git/BioInspiredDrone/important_data/'+name+'/best_genome.txt'))
+    genome = list(np.loadtxt('./important_data/'+name+'/best_genome.txt'))
     genome[8] = int(genome[8]); genome[9] = int(genome[9]); genome[10] = int(genome[10])
     best_genomes.append(genome)
 

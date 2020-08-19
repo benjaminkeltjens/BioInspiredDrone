@@ -1,3 +1,10 @@
+"""
+This file describes the GeneticAlgorithm class
+
+Benjamin Keltjens
+July 2020
+"""
+
 import random
 import numpy as np
 import pickle

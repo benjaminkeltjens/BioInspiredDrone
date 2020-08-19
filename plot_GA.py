@@ -5,7 +5,7 @@ import numpy as np
 
 # Plot Pareto Front
 # Plotting for one algorithm run
-plotter = GeneticPlot('/home/benjamin/git/BioInspiredDrone/important_data/1.0')
+plotter = GeneticPlot('./important_data/1.0')
 # plotter.plotHistory()
 plotter.plotParetoFront()
 
@@ -19,7 +19,7 @@ print(folder_names)
 folder_names.sort()
 print(folder_names)
 for name in folder_names:
-    plotters.append(GeneticPlot('/home/benjamin/git/BioInspiredDrone/important_data/'+name))
+    plotters.append(GeneticPlot('./important_data/'+name))
 
 # Std Deviation
 fig_std = plt.figure('Std Deviations')
@@ -69,7 +69,7 @@ for i in range(len(parameter_limits)):
 
 best_genomes = []
 for name in folder_names:
-    genome = list(np.loadtxt('/home/benjamin/git/BioInspiredDrone/important_data/'+name+'/best_genome.txt'))
+    genome = list(np.loadtxt('./important_data/'+name+'/best_genome.txt'))
     genome[8] = int(genome[8]); genome[9] = int(genome[9]); genome[10] = int(genome[10])
     best_genomes.append(genome)
 
